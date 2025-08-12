@@ -5,6 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>限时速写工具</title>
     <style>
+        /* CSS Variables for theming */
+        :root {
+            /* Dark Theme Defaults */
+            --bg-gradient-start: #1a1a2e;
+            --bg-gradient-mid: #16213e;
+            --bg-gradient-end: #0f3460;
+            --text-color: #e0e0e0;
+            --glass-bg-color: rgba(40, 44, 52, 0.6);
+            --glass-border-color: rgba(255, 255, 255, 0.18);
+            --button-primary-start: #0f3460;
+            --button-primary-end: #16213e;
+            --button-toggle-bg: rgba(255, 255, 255, 0.08);
+            --button-toggle-hover-bg: rgba(255, 255, 255, 0.15);
+            --button-toggle-active-start: #28a745;
+            --button-toggle-active-end: #218838;
+            --button-nav-bg: rgba(255, 255, 255, 0.35);
+            --button-nav-color: rgba(255, 255, 255, 0.95);
+            --button-nav-hover-bg: rgba(255, 255, 255, 0.5);
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: rgba(255, 255, 255, 0.2);
+            --info-text-color: #a0a0a0;
+            --default-preview-bg: #1a1a2e;
+            --alert-bg: rgba(40, 44, 52, 0.9);
+            --alert-border: 1px solid rgba(255, 255, 255, 0.18);
+            --alert-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        body.light-theme {
+            /* Light Theme Overrides */
+            --bg-gradient-start: #f0f2f5;
+            --bg-gradient-mid: #e9ecef;
+            --bg-gradient-end: #dee2e6;
+            --text-color: #333333;
+            --glass-bg-color: rgba(255, 255, 255, 0.8);
+            --glass-border-color: rgba(0, 0, 0, 0.1);
+            --button-primary-start: #4a90e2; /* Sky blue */
+            --button-primary-end: #61a9f5;
+            --button-toggle-bg: rgba(0, 0, 0, 0.05);
+            --button-toggle-hover-bg: rgba(0, 0, 0, 0.1);
+            --button-toggle-active-start: #28a745;
+            --button-toggle-active-end: #218838;
+            --button-nav-bg: rgba(0, 0, 0, 0.2);
+            --button-nav-color: rgba(0, 0, 0, 0.85);
+            --button-nav-hover-bg: rgba(0, 0, 0, 0.35);
+            --input-bg: rgba(0, 0, 0, 0.03);
+            --input-border: rgba(0, 0, 0, 0.15);
+            --info-text-color: #666666;
+            --default-preview-bg: #f8f9fa; /* Lighter preview background */
+            --alert-bg: rgba(255, 255, 255, 0.95);
+            --alert-border: 1px solid rgba(0, 0, 0, 0.1);
+            --alert-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+
         /* CSS Reset 和全局样式 */
         * {
             margin: 0;
@@ -18,29 +71,28 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            /* 默认深色渐变背景，此背景会在主菜单显示，或在预览时被覆盖 */
-            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
-            background-size: cover; /* 确保背景图片覆盖整个区域 */
-            background-position: center center; /* 居中显示背景图片 */
-            background-repeat: no-repeat; /* 防止背景图片重复 */
-            background-attachment: fixed; /* 背景固定，不随滚动条滚动 */
-            color: #e0e0e0;
-            overflow: hidden; /* 防止滚动条出现 */
-            transition: background 0.8s ease; /* 背景切换动画 */
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end));
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: var(--text-color);
+            overflow: hidden;
+            transition: background 0.8s ease, color 0.8s ease;
         }
 
         /* 玻璃拟态效果基础样式 */
         .glassmorphism {
-            background: rgba(40, 44, 52, 0.6); /* 半透明暗色背景 */
-            backdrop-filter: blur(10px); /* 模糊效果 */
-            border: 1px solid rgba(255, 255, 255, 0.18); /* 半透明边框 */
-            border-radius: 16px; /* 圆角 */
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* 阴影 */
+            background: var(--glass-bg-color);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border-color);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Shadow is intentionally not themed directly by variable for consistency */
             padding: 20px;
             margin: 10px;
         }
 
-        /* 整个应用的容器 */
+        /* The rest of the CSS using variables */
         #app-container {
             width: 100vw;
             height: 100vh;
@@ -51,10 +103,9 @@
             position: relative;
         }
 
-        /* 控制菜单 */
         #controls-menu {
             position: absolute;
-            top: 50%;
+            top: 55%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
@@ -62,11 +113,142 @@
             flex-direction: column;
             gap: 15px;
             max-width: 90%;
-            width: 400px; /* 菜单固定宽度 */
+            width: 400px;
         }
 
         #controls-menu.hidden {
             display: none;
+        }
+
+        #folder-browser-view {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 90%;
+            width: 800px;
+            height: 80vh;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-y: hidden;
+        }
+        #folder-browser-view.hidden {
+            display: none;
+        }
+
+        /* New: Folder browser header container */
+        .folder-browser-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 10px; /* Consistent padding */
+            margin-bottom: 10px; /* Space from content below */
+            flex-wrap: wrap; /* Allow wrapping by default now */
+            gap: 10px; /* Consistent gap between items */
+        }
+
+        .folder-browser-header h1 {
+            margin: 0; /* Remove default margins */
+            font-size: 1.8em;
+            color: var(--text-color);
+            flex-shrink: 0; /* Prevent shrinking */
+            white-space: nowrap; /* Prevent text wrapping within h1 */
+        }
+
+        .folder-browser-header #current-library-path {
+            margin: 0; /* Adjusted: No fixed margin-left/right, use gap instead */
+            font-size: 0.9em;
+            color: var(--info-text-color);
+            text-align: left; /* Align text left */
+            flex-grow: 1; /* Allow path to take available space */
+            white-space: nowrap; /* Prevent wrapping of path text */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0; /* Allow text to shrink if necessary */
+        }
+
+        .folder-browser-header #goUpFolderButton {
+            margin: 0; /* Remove default margins */
+            padding: 8px 15px; /* Adjust button padding */
+            font-size: 0.9em;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+
+        .info-message {
+            font-size: 1.1em;
+            color: var(--info-text-color);
+            text-align: center;
+            margin-top: 50px;
+            width: 100%;
+        }
+        
+        #thumbnails-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            padding: 10px;
+            width: 100%;
+            flex-grow: 1;
+            overflow-y: auto;
+            justify-content: center;
+            align-content: flex-start;
+        }
+
+        .thumbnail-item {
+            background: rgba(255, 255, 255, 0.05); /* This can stay fixed for contrast or be themed */
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            height: 160px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .thumbnail-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1); /* This can stay fixed or be themed */
+        }
+
+        .thumbnail-item img {
+            max-width: 100%;
+            max-height: 100px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .thumbnail-item .folder-icon {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+
+        .thumbnail-label {
+            font-size: 0.8em;
+            color: var(--info-text-color);
+            margin-top: 8px;
+            text-align: center;
+            word-break: break-all;
+            white-space: normal;
+            max-height: 2.4em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
         }
 
         .input-group {
@@ -77,69 +259,51 @@
 
         .input-group label {
             font-size: 0.9em;
-            color: #c0c0c0;
+            color: var(--info-text-color);
+        }
+        
+        .custom-input-like-button {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1em;
+            cursor: pointer;
+            text-align: center; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        .custom-input-like-button:hover {
+            border-color: var(--button-primary-start); /* Using primary button start color for hover border */
+            background-color: var(--button-toggle-hover-bg); /* Using toggle hover bg for consistency */
         }
 
         input[type="number"],
-        input[type="file"] {
+        input[type="text"] {
             width: 100%;
             padding: 10px 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--input-border);
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #e0e0e0;
+            background: var(--input-bg);
+            color: var(--text-color);
             font-size: 1em;
             outline: none;
-            transition: border-color 0.3s, background-color 0.3s;
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
         }
 
         input[type="number"]:focus,
-        input[type="file"]:focus {
-            border-color: #0f3460;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        /* 自定义文件选择按钮样式 */
-        input[type="file"]::-webkit-file-upload-button {
-            visibility: hidden;
-            width: 0;
-            padding: 0;
-            margin: 0;
-        }
-
-        input[type="file"]::before {
-            content: '选择图片文件夹';
-            display: inline-block;
-            background: linear-gradient(135deg, #0f3460, #16213e);
-            color: #e0e0e0;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            outline: none;
-            white-space: nowrap;
-            -webkit-user-select: none;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.9em;
-            transition: background 0.3s ease;
-        }
-
-        input[type="file"]:hover::before {
-            background: linear-gradient(135deg, #16213e, #0f3460);
-        }
-
-        /* 文件夹信息显示 */
-        #folder-info {
-            font-size: 0.85em;
-            color: #a0a0a0;
-            margin-top: -5px; /* 紧贴在文件选择下方 */
-            text-align: center;
-            height: 1.2em; /* 预留空间，防止布局抖动 */
+        input[type="text"]:focus {
+            border-color: var(--button-primary-start);
+            background-color: var(--button-toggle-hover-bg);
         }
 
         .buttons-group {
             display: flex;
-            flex-wrap: wrap; /* 允许按钮换行 */
+            flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
         }
@@ -151,40 +315,56 @@
             font-size: 1em;
             cursor: pointer;
             outline: none;
-            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            color: #e0e0e0;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
+            color: var(--text-color);
             font-weight: bold;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
         button.primary {
-            /* 主按钮颜色 */
-            background: linear-gradient(135deg, #0f3460, #16213e);
+            background: linear-gradient(135deg, var(--button-primary-start), var(--button-primary-end));
         }
 
         button.primary:hover {
-            background: linear-gradient(135deg, #16213e, #0f3460);
+            background: linear-gradient(135deg, var(--button-primary-end), var(--button-primary-start)); /* Reverse gradient on hover */
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
 
         button.toggle {
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--button-toggle-bg);
             box-shadow: none;
-            padding: 8px 15px; /* 切换按钮较小 */
+            padding: 8px 15px;
         }
 
         button.toggle.active {
-            /* 激活状态的切换按钮颜色 */
-            background: linear-gradient(135deg, #28a745, #218838);
+            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end));
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
         }
 
         button.toggle:not(.active):hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--button-toggle-hover-bg);
         }
 
-        /* 图片显示区域 */
+        button.toggle.disabled-preset {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.4);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        body.light-theme button.toggle.disabled-preset {
+            background: rgba(0, 0, 0, 0.02);
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
         #image-display-area {
             position: absolute;
             width: 100%;
@@ -193,48 +373,47 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            overflow: hidden; /* 确保图片不溢出 */
-        }
-
-        #current-image {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto; /* 允许图片按比例缩小 */
-            height: auto; /* 允许图片按比例缩小 */
-            object-fit: contain; /* 确保图片完整显示在容器内 */
-            transition: filter 0.5s ease, transform 0.5s ease;
-            user-select: none; /* 防止图片被选中 */
-            pointer-events: none; /* 防止默认图片拖拽/保存 */
-            flex-shrink: 0; /* 防止图片缩小到小于其内容 */
+            overflow: hidden;
         }
 
         #image-display-area.hidden {
             display: none;
         }
 
-        /* 倒计时显示 */
-        #countdown {
-            position: absolute;
-            top: 20px; /* 调整位置到左上角 */
-            left: 20px; /* 调整位置到左上角 */
-            font-size: 3em;
-            font-weight: bold;
-            color: rgba(255, 255, 255, 0.9);
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-            z-index: 5;
-            pointer-events: none; /* 允许点击穿透 */
+        #current-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto; /* Allow natural width based on aspect ratio */
+            height: auto; /* Allow natural height based on aspect ratio */
+            object-fit: contain; /* This is key for fitting without cropping */
+            transition: filter 0.5s ease, transform 0.5s ease;
+            user-select: none;
+            pointer-events: none;
+            /* Removed flex-shrink: 0; */
         }
 
-        /* 网格画布 */
+
+        #countdown {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 3em;
+            font-weight: bold;
+            color: var(--text-color); /* Themed text color */
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            pointer-events: none;
+        }
+
         #grid-canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 2; /* 在倒计时下方，图片上方 */
-            pointer-events: none; /* 允许点击穿透 */
-            opacity: 0; /* 初始隐藏 */
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0;
             transition: opacity 0.5s ease;
         }
 
@@ -242,7 +421,7 @@
             opacity: 1;
         }
 
-        /* 图片特效 */
+        /* Image effects */
         .mirror-effect {
             transform: scaleX(-1);
         }
@@ -251,88 +430,89 @@
             filter: grayscale(100%);
         }
 
-        /* 浮动控制菜单 (播放时鼠标悬停显示) - 右侧菜单 */
+        /* Floating control menu (right side) */
         #overlay-controls {
             position: absolute;
             top: 20px;
             right: 20px;
             z-index: 15;
             display: flex;
-            flex-direction: column; /* 按钮垂直堆叠 */
+            flex-direction: column;
             gap: 10px;
-            /* 默认隐藏，由父悬停区域控制显示 */
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
-        /* 鼠标悬停区域 - 右侧 */
         #right-controls-hover-zone {
             position: absolute;
             top: 0;
             right: 0;
-            width: 150px; /* 足够覆盖按钮区域的宽度，并留出一些容错空间 */
+            width: 150px;
             height: 100%;
-            z-index: 14; /* 位于菜单下方，但高于图片，以便捕获鼠标事件 */
-            pointer-events: auto; /* 允许鼠标事件 */
-            /* background-color: rgba(255,0,0,0.1); /* DEBUG */
+            z-index: 14;
+            pointer-events: auto;
         }
         #right-controls-hover-zone:hover #overlay-controls {
             opacity: 1;
             visibility: visible;
         }
-        /* 优化右侧浮动菜单按钮的样式 - 统一为更精致的玻璃拟态方块 */
+
         #overlay-controls button {
-            padding: 10px 15px; /* 统一内边距 */
+            padding: 10px 15px;
             font-size: 0.9em;
-            background: rgba(255, 255, 255, 0.15); /* 统一半透明基底色 */
-            color: #e0e0e0;
-            border: 1px solid rgba(255, 255, 255, 0.25); /* 统一边框 */
-            border-radius: 8px; /* 统一圆角 */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 统一阴影 */
-            width: auto; /* 自动宽度，根据内容调整 */
-            min-width: 40px; /* 最小宽度，防止太窄 */
-            height: 40px; /* 固定高度 */
-            display: flex; /* 使用 flexbox 对齐内容 */
-            align-items: center; /* 垂直居中内容 */
-            justify-content: center; /* 水平居中内容 (对于图标按钮) */
-            flex-shrink: 0; /* 防止被压缩 */
-            white-space: nowrap; /* 防止文本换行 */
-            position: relative; /* 用于 tooltip */
+            background: var(--button-toggle-bg); /* Themed */
+            color: var(--text-color); /* Themed */
+            border: 1px solid var(--glass-border-color); /* Themed */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: auto;
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            white-space: nowrap;
+            position: relative;
         }
 
         #overlay-controls button.primary {
-            background: linear-gradient(135deg, #0f3460, #16213e); /* 主按钮的渐变 */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* 主按钮更强的阴影 */
+            background: linear-gradient(135deg, var(--button-primary-start), var(--button-primary-end)); /* Themed */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
         #overlay-controls button.primary:hover {
-            background: linear-gradient(135deg, #16213e, #0f3460);
-            transform: translateY(-1px); /* 轻微上浮 */
+            background: linear-gradient(135deg, var(--button-primary-end), var(--button-primary-start)); /* Themed */
+            transform: translateY(-1px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
         }
 
         #overlay-controls button.toggle.active {
-            background: linear-gradient(135deg, #28a745, #218838); /* 激活的开关按钮渐变 */
+            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end)); /* Themed */
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
         }
 
         #overlay-controls button.toggle:not(.active):hover {
-            background: rgba(255, 255, 255, 0.25); /* 未激活开关按钮的悬停效果 */
+            background: var(--button-toggle-hover-bg); /* Themed */
         }
 
-        /* 图标按钮的特定样式 */
+        /* Icon-only buttons */
         #overlay-controls button.icon-only {
-            padding: 0; /* 移除内边距 */
-            font-size: 1.2em; /* 图标大小 */
-            width: 40px; /* 固定为正方形 */
+            padding: 0;
+            font-size: 1.2em;
+            width: 40px;
             height: 40px;
-            overflow: hidden; /* 隐藏文本 */
+            overflow: hidden;
+        }
+        #overlay-controls button.icon-only svg {
+            width: 28px; /* Slightly larger icons */
+            height: 28px;
         }
         #overlay-controls button.icon-only::after {
-            content: attr(data-tooltip); /* 使用 data-tooltip 作为提示文本 */
+            content: attr(data-tooltip);
             position: absolute;
-            bottom: 100%; /* 向上显示 */
+            bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
             margin-bottom: 10px;
@@ -345,38 +525,35 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.2s ease, visibility 0.2s ease;
-            pointer-events: none; /* 确保不影响鼠标事件 */
+            pointer-events: none;
         }
         #overlay-controls button.icon-only:hover::after {
             opacity: 1;
             visibility: visible;
         }
 
-        /* 图片底部导航按钮容器 */
+        /* Image bottom navigation buttons */
         #image-navigation-controls {
             position: absolute;
-            bottom: 20px; /* 移到图片底部 */
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 15;
             display: flex;
-            gap: 20px; /* 左右按钮间距 */
-            /* 默认隐藏，由父悬停区域控制显示 */
+            gap: 20px;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
-        /* 鼠标悬停区域 - 底部 */
         #bottom-controls-hover-zone {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 80px; /* 足够覆盖底部按钮的高度，并留出一些容错空间 */
+            height: 80px;
             z-index: 14;
             pointer-events: auto;
-            /* background-color: rgba(0,0,255,0.1); /* DEBUG */
         }
         #bottom-controls-hover-zone:hover #image-navigation-controls {
             opacity: 1;
@@ -384,74 +561,96 @@
         }
 
         #image-navigation-controls button {
-            background: rgba(255, 255, 255, 0.35); /* 更醒目的背景 */
-            border-radius: 50%; /* 圆形按钮 */
-            width: 65px; /* 固定宽度，稍微增大 */
-            height: 65px; /* 固定高度，稍微增大 */
+            background: var(--button-nav-bg); /* Themed */
+            border-radius: 50%;
+            width: 65px;
+            height: 65px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 3em; /* 增大图标 */
-            color: rgba(255, 255, 255, 0.95); /* 更亮的颜色 */
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* 更明显的阴影 */
-            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            text-shadow: 0 0 8px rgba(0, 0, 0, 0.6); /* 文本阴影让图标更突出 */
-            font-weight: bold; /* 使图标更粗 */
+            font-size: 3em;
+            color: var(--button-nav-color); /* Themed */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+            font-weight: bold;
         }
 
         #image-navigation-controls button:hover {
-            background: rgba(255, 255, 255, 0.5); /* 悬停时更亮 */
-            transform: translateY(-4px) scale(1.1); /* 更明显的上浮和放大 */
+            background: var(--button-nav-hover-bg); /* Themed */
+            transform: translateY(-4px) scale(1.1);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
         }
 
         #image-navigation-controls button:disabled {
-            background: rgba(255, 255, 255, 0.1); /* 禁用状态更暗更透明 */
-            color: rgba(255, 255, 255, 0.25); /* 禁用状态颜色更淡 */
+            background: rgba(255, 255, 255, 0.1); /* Keep low contrast for disabled */
+            color: rgba(255, 255, 255, 0.25);
             cursor: not-allowed;
             transform: translateY(0) scale(1);
             box-shadow: none;
         }
+        body.light-theme #image-navigation-controls button:disabled {
+            background: rgba(0, 0, 0, 0.1);
+            color: rgba(0, 0, 0, 0.25);
+        }
 
 
-        /* 新增：设置按钮样式 (主菜单右上角) */
-        #settings-button {
+        /* Top-right menu buttons */
+        #top-right-menu-buttons {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        #settings-button,
+        #random-playback-toggle {
+            background: var(--button-toggle-bg); /* Themed */
             border-radius: 50%;
             width: 40px;
             height: 40px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.5em; /* 图标大小 */
-            color: #e0e0e0;
+            font-size: 1.5em;
+            color: var(--text-color); /* Themed */
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
         }
-        #settings-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: rotate(15deg); /* 旋转效果 */
+        #settings-button:hover,
+        #random-playback-toggle:hover {
+            background: var(--button-toggle-hover-bg); /* Themed */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        #settings-button svg {
-            fill: currentColor; /* SVG 颜色跟随父元素 */
+        #settings-button svg,
+        #random-playback-toggle svg {
+            fill: currentColor;
+            width: 28px; /* Larger icons */
+            height: 28px;
         }
 
+        /* Random playback toggle active state */
+        #random-playback-toggle.active {
+            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end)); /* Themed */
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+        }
+        #settings-button:hover {
+            transform: rotate(15deg); 
+        }
 
-        /* 新增：设置模态框 (overlay) */
+        /* Settings modal overlay */
         #settings-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6); /* 半透明黑色背景 */
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
-            z-index: 20; /* 确保在最顶层 */
+            z-index: 20;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -466,7 +665,7 @@
         }
 
         #settings-modal-content {
-            width: 450px; /* 比主菜单稍大 */
+            width: 450px;
             max-width: 90%;
             padding: 30px;
             position: relative;
@@ -478,40 +677,89 @@
         #settings-modal-content h2 {
             text-align: center;
             margin-bottom: 10px;
-            color: #e0e0e0;
+            color: var(--text-color); /* Themed */
             font-size: 1.8em;
         }
 
+        /* Settings modal close button position (top-left) */
         #settings-modal-content .close-button {
+            position: absolute;
+            top: 10px; /* Slightly closer to edge */
+            left: 10px; /* Slightly closer to edge */
+            background: none; /* No background by default */
+            border: none;
+            font-size: 1.2em; /* Smaller font size for X */
+            color: #dc3545; /* Red color */
+            cursor: pointer;
+            transition: color 0.2s ease, background 0.2s ease, opacity 0.3s ease; /* Add opacity to transition */
+            padding: 0; /* Remove padding to make it truly circular/small */
+            width: 25px; /* Smaller width */
+            height: 25px; /* Smaller height */
+            border-radius: 50%; /* Make it circular */
+            display: flex; /* Use flex to center the X inside */
+            justify-content: center;
+            align-items: center;
+            opacity: 0; /* Hidden by default */
+            pointer-events: none; /* Make it non-interactive when hidden */
+            z-index: 1; /* Ensure it's above other elements if needed */
+        }
+        #settings-modal-content:hover .close-button {
+            opacity: 1; /* Show on parent hover */
+            pointer-events: auto; /* Make interactive on parent hover */
+        }
+        #settings-modal-content .close-button:hover {
+            color: #000000; /* Black color on button hover */
+            background: rgba(255, 255, 255, 0.2); /* Light background on hover for contrast */
+        }
+        body.light-theme #settings-modal-content .close-button:hover {
+            background: rgba(0, 0, 0, 0.1); /* Darker background on hover for light theme */
+        }
+
+
+        /* New: Theme toggle button inside settings modal (top-right) */
+        #settings-modal-theme-toggle {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: none;
-            border: none;
-            font-size: 1.5em;
-            color: #c0c0c0;
-            cursor: pointer;
-            transition: color 0.2s ease;
-            padding: 5px; /* 增加点击区域 */
+            background: var(--button-toggle-bg); /* Themed */
             border-radius: 50%;
+            width: 35px; /* Slightly smaller for settings modal */
+            height: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            color: var(--text-color); /* Themed */
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
         }
-        #settings-modal-content .close-button:hover {
-            color: #e0e0e0;
-            background: rgba(255, 255, 255, 0.1);
+        #settings-modal-theme-toggle:hover {
+            background: var(--button-toggle-hover-bg); /* Themed */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #settings-modal-theme-toggle svg {
+            fill: currentColor;
+            width: 24px; /* Slightly smaller icon for settings modal */
+            height: 24px;
+        }
+        /* Updated: Light theme active color to light blue */
+        #settings-modal-theme-toggle.active { /* For light theme active */
+            background: linear-gradient(135deg, #87CEEB, #ADD8E6); /* Sky Blue to Light Blue */
+            box-shadow: 0 2px 8px rgba(135, 206, 235, 0.4);
         }
 
-        /* 针对颜色输入框的样式 */
+        /* Color picker input */
         #gridColorPicker {
             width: 100%;
-            height: 40px; /* 增加高度使其更易点击 */
+            height: 40px;
             padding: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--input-border); /* Themed */
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--input-bg); /* Themed */
             cursor: pointer;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
         }
-        /* 隐藏颜色输入框的默认按钮 */
         #gridColorPicker::-webkit-color-swatch-wrapper {
             padding: 0;
         }
@@ -520,7 +768,7 @@
             border-radius: 6px;
         }
 
-        /* 针对单选按钮组的样式 */
+        /* Radio button group */
         .radio-group {
             display: flex;
             gap: 15px;
@@ -533,17 +781,18 @@
             gap: 5px;
             cursor: pointer;
             user-select: none;
+            color: var(--text-color); /* Themed */
         }
         .radio-group input[type="radio"] {
             -webkit-appearance: none;
             appearance: none;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--input-bg); /* Themed */
             margin: 0;
             font: inherit;
             color: currentColor;
             width: 1.15em;
             height: 1.15em;
-            border: 0.15em solid currentColor;
+            border: 0.15em solid var(--info-text-color); /* Themed */
             border-radius: 50%;
             transform: translateY(-0.075em);
             display: grid;
@@ -558,7 +807,7 @@
             border-radius: 50%;
             transform: scale(0);
             transition: transform 0.2s ease-in-out;
-            box-shadow: inset 1em 1em var(--form-control-color, #28a745); /* 绿色小圆点 */
+            box-shadow: inset 1em 1em var(--button-toggle-active-start); /* Themed (uses accent green) */
             background-color: CanvasText;
         }
 
@@ -570,12 +819,93 @@
             outline-offset: max(2px, 0.15em);
         }
 
+        /* Custom Alert Box */
+        #custom-alert-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--alert-bg); /* Themed */
+            backdrop-filter: blur(5px);
+            border: var(--alert-border); /* Themed */
+            border-radius: 12px;
+            box-shadow: var(--alert-shadow); /* Themed */
+            padding: 25px;
+            z-index: 1000;
+            color: var(--text-color); /* Themed */
+            text-align: center;
+            max-width: 400px; 
+            width: 90%;
+        }
+        #custom-alert-box button {
+            background: linear-gradient(135deg, var(--button-primary-start), var(--button-primary-end)); /* Themed */
+            color: var(--text-color); /* Themed */
+        }
 
-        /* 响应式调整 */
+
+        /* Responsive adjustments */
         @media (max-width: 768px) {
             #controls-menu {
-                width: 95%; /* 调整小屏幕菜单宽度 */
+                width: 95%;
                 padding: 15px;
+            }
+
+            #folder-browser-view {
+                width: 95%;
+                height: 90vh;
+                padding: 15px;
+            }
+
+            .folder-browser-header {
+                /*
+                Removed flex-direction: column; and align-items: flex-start;
+                This allows it to stay as a row and wrap items naturally due to flex-wrap: wrap;
+                It will only become column when absolutely necessary due to content size.
+                */
+                flex-wrap: wrap; /* Re-enable wrapping for small screens if content exceeds width */
+                justify-content: space-between; /* Keep space-between for alignment */
+                gap: 5px; /* Smaller gap when stacked or tightly packed */
+            }
+
+            .folder-browser-header h1 {
+                font-size: 1.5em;
+                /* No change for white-space: nowrap here, it's global for h1 in this header */
+            }
+
+            .folder-browser-header #current-library-path {
+                margin: 0; /* Remove horizontal margin */
+                font-size: 0.8em;
+                text-align: left;
+                width: auto; /* Allow content-based width, flex-grow will distribute */
+                flex-basis: 100%; /* Take full width on a new line if it wraps */
+                order: 3; /* Push to the last line if wraps */
+                white-space: normal; /* Allow wrap for long paths on small screens when on new line */
+                overflow: hidden; /* Ensure overflow handling */
+                text-overflow: ellipsis; /* Ensure ellipsis */
+            }
+            /* Add this to allow path to wrap within its own box on small screens once it's forced to a new line */
+            .folder-browser-header #goUpFolderButton {
+                font-size: 0.8em;
+                padding: 6px 10px;
+                width: auto; /* Auto width */
+                order: 2; /* Position it after h1 and before path if wraps */
+                /* align-self: flex-end; -- Removed this as it conflicts with horizontal alignment in wrap scenario */
+            }
+
+
+            #thumbnails-grid-container {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+
+            .thumbnail-item {
+                height: 140px;
+            }
+            .thumbnail-item img {
+                max-height: 90px;
+            }
+            .thumbnail-item .folder-icon {
+                font-size: 50px;
             }
 
             button {
@@ -584,20 +914,20 @@
             }
 
             input[type="number"],
-            input[type="file"] {
+            input[type="text"] {
                 padding: 8px 12px;
                 font-size: 0.9em;
             }
 
-            input[type="file"]::before {
-                padding: 6px 10px;
-                font-size: 0.8em;
+            .custom-input-like-button {
+                padding: 8px 12px;
+                font-size: 0.9em;
             }
 
             #countdown {
                 font-size: 2em;
-                top: 10px; /* 小屏幕调整位置 */
-                left: 10px; /* 小屏幕调整位置 */
+                top: 10px;
+                left: 10px;
             }
 
             #overlay-controls {
@@ -608,8 +938,8 @@
             #overlay-controls button {
                 padding: 8px 12px;
                 font-size: 0.8em;
-                height: 35px; /* 小屏幕时高度减少 */
-                min-width: 35px; /* 小屏幕时最小宽度减少 */
+                height: 35px;
+                min-width: 35px;
             }
             #overlay-controls button.icon-only {
                 width: 35px;
@@ -622,12 +952,21 @@
                 font-size: 2em;
             }
 
-            #settings-button {
+            #top-right-menu-buttons {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+            #settings-button,
+            #random-playback-toggle {
                 width: 35px;
                 height: 35px;
                 font-size: 1.2em;
-                top: 10px;
-                right: 10px;
+            }
+            #settings-button svg,
+            #random-playback-toggle svg {
+                width: 24px; /* Smaller icons for small screens */
+                height: 24px;
             }
 
             #settings-modal-content {
@@ -635,13 +974,22 @@
                 padding: 20px;
             }
             .radio-group {
-                flex-direction: column; /* 小屏幕上单选按钮垂直排列 */
+                flex-direction: column;
             }
             #right-controls-hover-zone {
-                width: 100px; /* 小屏幕时缩小悬停区域 */
+                width: 100px;
             }
             #bottom-controls-hover-zone {
-                height: 70px; /* 小屏幕时缩小悬停区域 */
+                height: 70px;
+            }
+
+            #settings-modal-theme-toggle {
+                width: 30px; /* Even smaller for settings modal on small screen */
+                height: 30px;
+            }
+            #settings-modal-theme-toggle svg {
+                width: 20px;
+                height: 20px;
             }
         }
     </style>
@@ -651,11 +999,14 @@
         <!-- 控制菜单 -->
         <div id="controls-menu" class="glassmorphism">
             <h1>限时速写工具</h1>
+            <!-- 整合后的文件夹选择和路径显示区域 -->
             <div class="input-group">
-                <label for="imageFolder">选择图片文件夹:</label>
-                <input type="file" id="imageFolder" webkitdirectory directory multiple accept="image/*">
-                <div id="folder-info"></div> <!-- 显示文件夹信息 -->
+                <label>速写文件夹:</label>
+                <div id="sketchFolderInputDisplay" class="custom-input-like-button">
+                    点击选择速写文件夹...
+                </div>
             </div>
+
             <div class="input-group">
                 <label for="displayTime">每张图片显示时间 (秒):</label>
                 <input type="number" id="displayTime" value="60" min="1">
@@ -676,14 +1027,22 @@
                 <button id="grayscaleToggle" class="toggle">灰度</button>
                 <button id="gridToggle" class="toggle">网格</button>
             </div>
-            <p style="font-size: 0.8em; text-align: center; color: #a0a0a0; margin-top: 15px;">小提示: 开始后鼠标悬停在图片上可显示控制菜单。</p>
+            <p style="font-size: 0.8em; text-align: center; color: var(--info-text-color); margin-top: 15px;">小提示: 开始后鼠标悬停在图片上可显示控制菜单。</p>
 
-            <!-- 设置按钮 - 右上角图标 -->
-            <button id="settings-button" class="toggle">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.1-.69-1.72-.94L14.44 2.87c-.07-.23-.28-.39-.52-.39h-4c-.24 0-.45.16-.52.39L9.17 5.75c-.62.25-1.19.55-1.72.94l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.1.69 1.72.94l.44 2.88c.07.23.28.39.52.39h4c.24 0 .45-.16.52-.39l.44-2.88c.62-.25 1.19-.55 1.72-.94l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
-                </svg>
-            </button>
+            <!-- 设置按钮和随机/顺序播放按钮 - 右上角图标 -->
+            <div id="top-right-menu-buttons">
+                <button id="random-playback-toggle" class="toggle" data-tooltip="随机/顺序播放">
+                    <!-- Icon for random playback (shuffle) -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10.59 9.17L5.41 4H21V2H3v10.59l5.59-5.59 2.59 2.58zM14.59 14.83L19.59 19H3v2h18v-9.59L14.59 14.83z"/>
+                    </svg>
+                </button>
+                <button id="settings-button" class="toggle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.1-.69-1.72-.94L14.44 2.87c-.07-.23-.28-.39-.52-.39h-4c-.24 0-.45.16-.52.39L9.17 5.75c-.62.25-1.19.55-1.72.94l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.1.69 1.72.94l.44 2.88c.07.23.28.39.52.39h4c.24 0 .45-.16.52-.39l.44-2.88c.62-.25 1.19-.55 1.72-.94l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- 图片显示区域 -->
@@ -746,12 +1105,47 @@
                 </div>
             </div>
         </div>
+
+        <!-- 文件夹浏览器视图 -->
+        <div id="folder-browser-view" class="glassmorphism hidden">
+            <!-- New: Folder browser header -->
+            <div class="folder-browser-header">
+                <h1>图片库</h1>
+                <div id="current-library-path"></div>
+                <button id="goUpFolderButton" class="toggle">
+                    <span style="font-size: 1.2em; margin-right: 5px;">⬆</span>返回上级
+                </button>
+            </div>
+            
+            <div id="thumbnails-grid-container">
+                <!-- 图片缩略图将在此处动态加载 -->
+                <p class="info-message" id="folderBrowserInfoMessage">加载中...</p>
+            </div>
+            <!-- 分页控件 -->
+            <div class="buttons-group" style="width: 100%; justify-content: space-between; margin-top: 10px;">
+                <button id="prevPageButton" class="toggle">上一页</button>
+                <span id="pageInfoDisplay" style="color: var(--info-text-color); font-size: 0.9em;"></span>
+                <button id="nextPageButton" class="toggle">下一页</button>
+            </div>
+            <div class="buttons-group">
+                <button id="selectFolderForSketchAndReturnToMenuButton" class="primary">选择此文件夹</button>
+                <button id="selectNewFolderFromBrowserButton" class="primary">选择其他文件夹</button>
+                <button id="backFromBrowserToMenuButton" class="primary">返回主菜单</button>
+            </div>
+        </div>
     </div>
 
     <!-- 设置模态框 -->
     <div id="settings-modal-overlay">
         <div id="settings-modal-content" class="glassmorphism">
             <button class="close-button" id="closeSettingsModal">&times;</button>
+            <!-- New: Theme toggle button inside settings modal -->
+            <button id="settings-modal-theme-toggle" class="toggle" data-tooltip="切换主题">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.12-1.36a5.5 5.5 0 00-6.09-6.09A9.006 9.006 0 0012 3m0 2a7 7 0 110 14V5a7 7 0 010 14"/>
+                </svg>
+            </button>
+
             <h2>设置</h2>
             <!-- 主菜单背景设置 -->
             <div class="input-group">
@@ -767,6 +1161,15 @@
                 <div class="buttons-group">
                     <button id="changePreviewBackgroundButton" class="primary">更换预览背景</button>
                     <button id="resetPreviewBackgroundButton" class="primary">重置预览背景</button>
+                </div>
+            </div>
+            <!-- 默认图片文件夹设置 -->
+            <div class="input-group">
+                <label for="defaultImageFolderPathDisplay">默认图片文件夹路径:</label>
+                <input type="text" id="defaultImageFolderPathDisplay" readonly placeholder="未设置默认路径">
+                <div class="buttons-group">
+                    <button id="setDefaultImageFolderButton" class="primary">设置默认路径</button>
+                    <button id="clearDefaultImageFolderButton" class="primary">清除默认路径</button>
                 </div>
             </div>
             <!-- 网格颜色设置 -->
@@ -797,24 +1200,24 @@
     </div>
 
     <script>
-        // 获取 DOM 元素
+        // Get DOM elements
         const appContainer = document.getElementById('app-container');
         const controlsMenu = document.getElementById('controls-menu');
-        const imageFolderInput = document.getElementById('imageFolder');
-        const folderInfo = document.getElementById('folder-info'); 
+        const sketchFolderInputDisplay = document.getElementById('sketchFolderInputDisplay'); // Main menu sketch folder display/selection area
         const displayTimeInput = document.getElementById('displayTime');
         const startButton = document.getElementById('startButton');
         const mirrorToggle = document.getElementById('mirrorToggle');
         const grayscaleToggle = document.getElementById('grayscaleToggle');
         const gridToggle = document.getElementById('gridToggle');
 
-        // 常用时间按钮及其容器
+        // Preset time buttons and their container
         const presetTimeButtonsContainer = document.getElementById('preset-time-buttons');
         const preset30sButton = document.getElementById('preset30s');
         const preset60sButton = document.getElementById('preset60s'); 
         const preset120sButton = document.getElementById('preset120s');
         const preset300sButton = document.getElementById('preset300s'); 
         const preset600sButton = document.getElementById('preset600s'); 
+        const presetTimes = [30, 60, 120, 300, 600]; // Array of preset times
 
         const imageDisplayArea = document.getElementById('image-display-area');
         const currentImage = document.getElementById('current-image');
@@ -822,7 +1225,7 @@
         const gridCanvas = document.getElementById('grid-canvas');
         const ctx = gridCanvas.getContext('2d'); 
 
-        // 右侧浮动控制菜单及悬停区域
+        // Right floating control menu and hover area
         const rightControlsHoverZone = document.getElementById('right-controls-hover-zone');
         const overlayControls = document.getElementById('overlay-controls');
         const openInFinderButton = document.getElementById('openInFinderButton'); 
@@ -832,15 +1235,16 @@
         const toggleAlwaysOnTopButton = document.getElementById('toggleAlwaysOnTopButton'); 
         const backToMenuButton = document.getElementById('backToMenuButton');
 
-        // 图片底部导航按钮及悬停区域
+        // Image bottom navigation buttons and hover area
         const bottomControlsHoverZone = document.getElementById('bottom-controls-hover-zone');
         const imageNavigationControls = document.getElementById('image-navigation-controls'); 
         const prevImageButton = document.getElementById('prevImageButton'); 
         const nextImageButton = document.getElementById('nextImageButton'); 
         const pausePlayButton = document.getElementById('pausePlayButton'); 
 
-        // 设置模态框相关元素
+        // Settings modal related elements
         const settingsButton = document.getElementById('settings-button'); 
+        const randomPlaybackToggle = document.getElementById('random-playback-toggle'); // New random/sequential playback button
         const settingsModalOverlay = document.getElementById('settings-modal-overlay');
         const closeSettingsModalButton = document.getElementById('closeSettingsModal');
         const changeMainMenuBackgroundButton = document.getElementById('changeMainMenuBackgroundButton'); 
@@ -852,41 +1256,377 @@
         const gridSizeInput = document.getElementById('gridSizeInput'); 
         const resetGridSizeButton = document.getElementById('resetGridSizeButton'); 
         const timeFormatRadios = document.querySelectorAll('input[name="timeFormat"]'); 
+        // Removed original themeToggle from top-right-menu-buttons
+        const settingsModalThemeToggle = document.getElementById('settings-modal-theme-toggle'); // New theme toggle button inside settings modal
 
-        // 状态变量
-        let imageFiles = []; 
-        let imageUrls = []; 
+        // Default image folder settings related DOM elements
+        const defaultImageFolderPathDisplay = document.getElementById('defaultImageFolderPathDisplay');
+        const setDefaultImageFolderButton = document.getElementById('setDefaultImageFolderButton');
+        const clearDefaultImageFolderButton = document.getElementById('clearDefaultImageFolderButton');
+
+        // Folder browser view DOM elements
+        const folderBrowserView = document.getElementById('folder-browser-view');
+        const currentLibraryPathDisplay = document.getElementById('current-library-path');
+        const thumbnailsGridContainer = document.getElementById('thumbnails-grid-container');
+        const selectFolderForSketchAndReturnToMenuButton = document.getElementById('selectFolderForSketchAndReturnToMenuButton'); 
+        const selectNewFolderFromBrowserButton = document.getElementById('selectNewFolderFromBrowserButton');
+        const backFromBrowserToMenuButton = document.getElementById('backFromBrowserToMenuButton');
+        const folderBrowserInfoMessage = document.getElementById('folderBrowserInfoMessage'); 
+        const goUpFolderButton = document.getElementById('goUpFolderButton'); 
+
+        // Pagination elements
+        const prevPageButton = document.getElementById('prevPageButton');
+        const nextPageButton = document.getElementById('nextPageButton');
+        const pageInfoDisplay = document.getElementById('pageInfoDisplay');
+
+
+        // State variables
+        let imageFiles = []; // Stores image file objects (including original path etc.) for sketching
+        let imageUrls = []; // Stores file:// URLs for displaying images for sketching
         let currentImageIndex = -1; 
         let displayTime = 60; 
         let countdownTimer; 
         let remainingTime; 
         let isPlaying = false; 
         let isPaused = false; 
+        let currentDefaultImageFolderPath = ''; // Saves current default image folder path
+        let currentLoadedFolderPath = ''; // Saves current folder path loaded in image library view
 
-        // 特效状态
+        // Effect states
         let isMirrorEnabled = false;
         let isGrayscaleEnabled = false;
         let isGridEnabled = false;
         let isAlwaysOnTop = false; 
+        let isRandomPlayback = true; // New: default to random playback
+        let isLightThemeEnabled = false; // New: default to dark theme
 
-        // 图片播放历史
+        // Image playback history
         let displayedImageHistory = [];
         let historyPointer = -1; 
 
-        // 默认设置值
+        // Default settings values
         const defaultMainMenuBackground = 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)';
-        const defaultPreviewBackground = '#1a1a2e'; // 纯深色背景作为默认预览背景
+        const defaultPreviewBackground = '#1a1a2e'; // Pure dark background as default preview background
         const defaultGridColorHex = '#FFFFFF'; 
         const defaultGridSize = 50; 
         const defaultTimeFormat = 'minutes:seconds'; 
         const gridAlpha = 0.3; 
 
-        // 当前设置值（会从存储中加载）
+        // Current setting values (will be loaded from storage)
         let currentMainMenuBackgroundPath = ''; 
         let currentPreviewBackgroundPath = ''; 
         let currentGridColorHex = defaultGridColorHex;
         let currentGridSize = defaultGridSize;
         let currentTimeFormat = defaultTimeFormat;
+
+        // Pagination state
+        const itemsPerPage = 30; // Number of items (folders + images) to display per page
+        let currentFolderItems = []; // Stores ALL sorted items (directories + files) for the current folder view
+        let currentPage = 0; // 0-indexed page number
+
+
+        /**
+         * Natural sort comparator function for strings, handling numbers correctly.
+         * From: https://stackoverflow.com/questions/38640203/javascript-sort-array-of-objects-by-property-containing-numbers-and-letters
+         * @param {string} a - First string to compare.
+         * @param {string} b - Second string to compare.
+         * @returns {number} - Comparison result.
+         */
+        function naturalSort(a, b) {
+            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+        }
+
+
+        /**
+         * Displays a custom alert box, replacing the native alert.
+         * @param {string} message - Message to display.
+         * @param {string} [title="Tip"] - Title of the alert box.
+         */
+        function showCustomAlert(message, title = "Tip") {
+            // Remove existing alert box if any
+            const existingAlert = document.getElementById('custom-alert-box');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alertBox = document.createElement('div');
+            alertBox.id = 'custom-alert-box'; // Assign ID for easy removal
+            alertBox.innerHTML = `
+                <h3 style="margin-bottom: 15px; font-size: 1.3em;">${title}</h3>
+                <p style="margin-bottom: 20px; font-size: 1em; line-height: 1.5;">${message}</p>
+                <button id="alertCloseButton" style="
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: background 0.3s ease, color 0.3s ease;
+                ">确定</button>
+            `;
+            document.body.appendChild(alertBox);
+
+            document.getElementById('alertCloseButton').addEventListener('click', () => {
+                document.body.removeChild(alertBox);
+            });
+        }
+
+        /**
+         * Applies the selected theme to the body element.
+         * @param {boolean} isLight - True for light theme, false for dark theme.
+         */
+        function applyTheme(isLight) {
+            isLightThemeEnabled = isLight;
+            document.body.classList.toggle('light-theme', isLight);
+            // Update settings modal theme toggle button state
+            settingsModalThemeToggle.classList.toggle('active', isLight);
+            if (window.electronAPI) {
+                window.electronAPI.saveSetting('isLightThemeEnabled', isLight);
+            }
+            // Reapply current background to ensure theme changes reflect
+            if (!imageDisplayArea.classList.contains('hidden')) {
+                // If in preview mode, reapply preview background
+                applyBackground(currentPreviewBackgroundPath, true);
+            } else {
+                // If in menu/browser mode, reapply main menu background
+                applyBackground(currentMainMenuBackgroundPath, false);
+            }
+            // Redraw grid if enabled to update its color based on theme
+            if (isGridEnabled && !imageDisplayArea.classList.contains('hidden')) {
+                setGridColor(currentGridColorHex); // This will trigger drawGrid
+            }
+        }
+
+
+        /**
+         * Display the main menu interface
+         * @param {string} [selectedFolderForSketch] - The folder path selected from the image library
+         */
+        function showMainMenu(selectedFolderForSketch = null) {
+            controlsMenu.classList.remove('hidden');
+            folderBrowserView.classList.add('hidden'); // Hide image library view
+            imageDisplayArea.classList.add('hidden'); // Hide image display area
+            applyBackground(currentMainMenuBackgroundPath, false); // Apply main menu background
+            updateNavigationButtons(); // Update button states
+
+            // If a path is brought back from the image library, update the main menu display
+            if (selectedFolderForSketch) {
+                sketchFolderInputDisplay.textContent = selectedFolderForSketch;
+                // At this point, imageFiles and imageUrls should have been populated by showFolderBrowserView
+                startButton.disabled = (imageUrls.length === 0);
+            } else {
+                // Otherwise, reset to unselected state and disable start button
+                sketchFolderInputDisplay.textContent = '点击选择速写文件夹...'; // Initial prompt text
+                startButton.disabled = true;
+                // Ensure loaded images are cleared to prevent sketching when no folder is selected
+                imageFiles = [];
+                imageUrls = [];
+            }
+        }
+
+        /**
+         * Renders thumbnails for the current page in the folder browser.
+         */
+        function renderCurrentPageThumbnails() {
+            thumbnailsGridContainer.innerHTML = ''; // Clear previous thumbnails
+            folderBrowserInfoMessage.classList.add('hidden'); // Hide info message by default
+
+            const startIndex = currentPage * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, currentFolderItems.length);
+            const itemsToDisplay = currentFolderItems.slice(startIndex, endIndex);
+
+            if (itemsToDisplay.length === 0 && currentFolderItems.length === 0) {
+                folderBrowserInfoMessage.textContent = '当前文件夹为空。';
+                folderBrowserInfoMessage.classList.remove('hidden');
+            } else if (itemsToDisplay.length === 0 && currentFolderItems.length > 0) {
+                 // Should not happen if pagination logic is correct, but as a safeguard
+                folderBrowserInfoMessage.textContent = '没有更多项目了。';
+                folderBrowserInfoMessage.classList.remove('hidden');
+            }
+
+            itemsToDisplay.forEach(item => {
+                const thumbnailItem = document.createElement('div');
+                thumbnailItem.classList.add('thumbnail-item');
+                
+                if (item.type === 'directory') {
+                    thumbnailItem.innerHTML = `
+                        <span class="folder-icon">📁</span>
+                        <div class="thumbnail-label">${item.name}</div>
+                    `;
+                    thumbnailItem.addEventListener('click', () => showFolderBrowserView(item.path)); // Click folder to enter
+                } else if (item.type === 'file') {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = item.path; // Use file:// protocol path
+                    imgElement.alt = item.name;
+
+                    const labelElement = document.createElement('div');
+                    labelElement.classList.add('thumbnail-label');
+                    labelElement.textContent = item.name;
+
+                    thumbnailItem.appendChild(imgElement);
+                    thumbnailItem.appendChild(labelElement);
+
+                    // Add double-click to open image in system viewer
+                    thumbnailItem.addEventListener('dblclick', () => {
+                        if (window.electronAPI && item.originalPath) {
+                            // Changed to openFileInDefaultApp
+                            window.electronAPI.openFileInDefaultApp(item.originalPath)
+                                .then(result => {
+                                    if (!result.success) {
+                                        showCustomAlert(result.message || '无法打开文件。', '错误');
+                                    }
+                                });
+                        } else {
+                            showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
+                        }
+                    });
+                }
+                thumbnailsGridContainer.appendChild(thumbnailItem);
+            });
+
+            // Update pagination info and button states
+            const totalPages = Math.ceil(currentFolderItems.length / itemsPerPage);
+            pageInfoDisplay.textContent = `第 ${currentPage + 1} 页 / 共 ${totalPages === 0 ? 1 : totalPages} 页`;
+            prevPageButton.disabled = (currentPage === 0);
+            nextPageButton.disabled = (currentPage >= totalPages - 1 || totalPages === 0);
+        }
+
+        /**
+         * Displays the previous page of thumbnails.
+         */
+        function showPreviousPageOfThumbnails() {
+            if (currentPage > 0) {
+                currentPage--;
+                renderCurrentPageThumbnails();
+            }
+        }
+
+        /**
+         * Displays the next page of thumbnails.
+         */
+        function showNextPageOfThumbnails() {
+            const totalPages = Math.ceil(currentFolderItems.length / itemsPerPage);
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                renderCurrentPageThumbnails();
+            }
+        }
+
+        /**
+         * Display folder browser view and load images and subfolders under the specified path
+         * @param {string} folderPath - 要读取的文件夹路径
+         */
+        async function showFolderBrowserView(folderPath) {
+            if (!folderPath) {
+                // If no path is provided, open folder selection dialog
+                if (window.electronAPI) {
+                    const newFolderPath = await window.electronAPI.openFolderDialog(currentDefaultImageFolderPath || undefined);
+                    if (newFolderPath) {
+                        folderPath = newFolderPath;
+                    } else {
+                        showMainMenu(); // User canceled selection, return to main menu
+                        return;
+                    }
+                } else {
+                    showCustomAlert('无法加载图片库，请选择一个有效文件夹。', '错误');
+                    showMainMenu(); // Go back to main menu for user to re-select
+                    return;
+                }
+            }
+
+            controlsMenu.classList.add('hidden');
+            imageDisplayArea.classList.add('hidden');
+            folderBrowserView.classList.remove('hidden'); // Show image library view
+            applyBackground(currentMainMenuBackgroundPath, false); // Image library view also uses main menu background
+
+            currentLoadedFolderPath = folderPath; // Update current loaded folder path
+            // Simplify path display, only show the last part of the folder name, but keep full path as tooltip
+            const pathParts = folderPath.split(/[/\\]/);
+            currentLibraryPathDisplay.textContent = `当前文件夹: ${pathParts[pathParts.length - 1]}`;
+            currentLibraryPathDisplay.title = folderPath; // Full path as tooltip
+            
+            thumbnailsGridContainer.innerHTML = ''; // Clear previous thumbnails
+            folderBrowserInfoMessage.textContent = '加载中...'; // Display loading message
+            folderBrowserInfoMessage.classList.remove('hidden'); // Ensure message is displayed
+
+            // Clear global image data, wait for re-population
+            imageFiles = []; 
+            imageUrls = [];
+            currentFolderItems = []; // Clear for pagination display as well
+            
+            // Disable "Select this folder" button by default until images are loaded
+            selectFolderForSketchAndReturnToMenuButton.disabled = true;
+
+            // Show "Go Up Folder" button (if not root directory)
+            const parentPath = getParentPath(folderPath);
+            goUpFolderButton.classList.toggle('hidden', !parentPath);
+
+            try {
+                const items = await window.electronAPI.readFolderImages(folderPath);
+
+                if (items.length === 0) {
+                    folderBrowserInfoMessage.textContent = `在 "${pathParts[pathParts.length - 1]}" 文件夹中未找到任何图片或子文件夹。`;
+                    renderCurrentPageThumbnails(); // Update pagination UI to reflect empty state
+                    return;
+                }
+
+                // Separate and sort items for display and for actual playback
+                const directories = items.filter(item => item.type === 'directory');
+                const allImageFilesForPlayback = items.filter(item => item.type === 'file');
+
+                // Sort image files for sequential playback
+                allImageFilesForPlayback.sort((a, b) => naturalSort(a.name, b.name));
+
+                // Populate global image data for sketch mode (ONLY images, and sorted)
+                imageFiles = allImageFilesForPlayback.map(file => ({ name: file.name, path: file.originalPath }));
+                imageUrls = allImageFilesForPlayback.map(file => file.path);
+
+                // Combine all items (directories + sorted images) for pagination display
+                currentFolderItems = directories.concat(allImageFilesForPlayback);
+                currentPage = 0; // Reset to first page
+                renderCurrentPageThumbnails(); // Render the first page
+
+                if (imageUrls.length > 0) {
+                    selectFolderForSketchAndReturnToMenuButton.disabled = false; // Enable "Select this folder" only if there are images
+                } else {
+                    selectFolderForSketchAndReturnToMenuButton.disabled = true; // Disable if no images
+                }
+
+            } catch (error) {
+                console.error('Failed to load images/folders for folder browser:', error);
+                folderBrowserInfoMessage.textContent = `加载图片库失败：${error.message || '未知错误'}`;
+                folderBrowserInfoMessage.classList.remove('hidden');
+                selectFolderForSketchAndReturnToMenuButton.disabled = true; // Disable on failure
+                renderCurrentPageThumbnails(); // Update pagination UI for error state
+            }
+        }
+
+        /**
+         * Get parent folder path
+         * @param {string} currentPath - Current path
+         * @returns {string|null} Parent path, null if it's the root directory
+         */
+        function getParentPath(currentPath) {
+            if (!currentPath) return null;
+            // Use Electron API to get dirname, because renderer process does not have Node.js path module
+            // Currently simplified to JS string operations, but a more robust solution is IPC to main process to get path.dirname
+            const parts = currentPath.split(/[/\\]/); // Compatible with Windows and macOS
+            if (parts.length <= 1) return null; // Already root directory or drive root (e.g., C:\)
+
+            // If it's Windows drive root (e.g., C:\), there is no parent
+            if (parts.length === 2 && parts[1] === '' && /^[a-zA-Z]:$/.test(parts[0])) {
+                return null;
+            }
+            
+            // Remove the last part
+            parts.pop();
+            // Recombine path
+            let parent = parts.join(currentPath.includes('/') ? '/' : '\\');
+            // Handle Windows drive root, ensure C: becomes C:\
+            if (parent.match(/^[a-zA-Z]:$/) && currentPath.includes('\\')) {
+                parent += '\\';
+            }
+            return parent || (currentPath.includes('/') ? '/' : '\\'); // If it's /a/b -> / , otherwise Windows drive root
+        }
 
 
         /**
@@ -959,27 +1699,30 @@
             } else {
                 if (isPreview) {
                     document.body.style.backgroundImage = `none`; // Clear image background
-                    document.body.style.backgroundColor = defaultPreviewBackground; // Apply default solid color
+                    document.body.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--default-preview-bg'); // Use themed default solid color
                 } else {
-                    document.body.style.backgroundImage = defaultMainMenuBackground; // Apply default gradient for main menu
+                    document.body.style.backgroundImage = `linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end))`; // Use themed default gradient for main menu
                     document.body.style.backgroundColor = ''; // Clear solid color
                 }
             }
         }
 
         /**
-         * Initialization function, loads all saved settings
+         * Initialization function, loads all saved settings and determines initial view.
          */
         document.addEventListener('DOMContentLoaded', async () => {
             if (window.electronAPI) {
+                // Load theme setting first
+                isLightThemeEnabled = await window.electronAPI.loadSetting('isLightThemeEnabled') ?? false; // Default to dark theme
+                applyTheme(isLightThemeEnabled); // Apply theme immediately
+
                 // Load main menu background image
                 currentMainMenuBackgroundPath = await window.electronAPI.loadSetting('mainMenuBackgroundPath') || '';
-                applyBackground(currentMainMenuBackgroundPath, false);
+                // No need to apply background here, it's handled by applyTheme and showMainMenu
 
                 // Load preview background image path
                 currentPreviewBackgroundPath = await window.electronAPI.loadSetting('previewBackgroundPath') || '';
-                // The actual preview background will be applied when entering preview mode
-
+                
                 // Load grid color
                 const savedGridColor = await window.electronAPI.loadSetting('gridColor');
                 if (savedGridColor) {
@@ -1020,9 +1763,25 @@
                     setTimeFormat(defaultTimeFormat);
                 }
 
+                // Load default image folder path
+                currentDefaultImageFolderPath = await window.electronAPI.loadSetting('defaultImageFolderPath') || '';
+                defaultImageFolderPathDisplay.value = currentDefaultImageFolderPath || '未设置默认路径';
+
+                // Load random playback setting
+                isRandomPlayback = await window.electronAPI.loadSetting('isRandomPlayback') ?? true; // Default to true if not set
+                randomPlaybackToggle.classList.toggle('active', isRandomPlayback);
+
+
+                // Determine initial view based on default image folder
+                if (currentDefaultImageFolderPath) {
+                    showFolderBrowserView(currentDefaultImageFolderPath); // Display image library view and load default images
+                } else {
+                    showMainMenu(); // Display main menu
+                }
+
             } else {
-                // If not in Electron environment, use default values
-                applyBackground(null, false); // Default main menu background
+                // If not in Electron environment, use default values and show main menu
+                applyTheme(false); // Default to dark theme
                 currentPreviewBackgroundPath = ''; // Preview background defaults to empty
                 gridColorPicker.value = defaultGridColorHex;
                 setGridColor(defaultGridColorHex);
@@ -1034,77 +1793,55 @@
                         radio.checked = true;
                     }
                 });
+                showMainMenu(); // Show main menu by default in non-Electron environment
             }
 
-            // Initialize button states
-            startButton.disabled = true; 
+            // Initialize main menu button states
             mirrorToggle.classList.toggle('active', isMirrorEnabled);
             grayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
             gridToggle.classList.toggle('active', isGridEnabled);
             overlayMirrorToggle.classList.toggle('active', isMirrorEnabled);
             overlayGrayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
-            overlayGridToggle.classList.toggle('active', isGridEnabled);
+            overlayGridToggle.classList.toggle('active', isGridEnabled); 
             toggleAlwaysOnTopButton.classList.toggle('active', isAlwaysOnTop); 
 
-            // Default activate 60-second button style and ensure input also shows 60
-            setPresetTime(60, preset60sButton);
+            // Initialize preset time buttons
+            updatePresetTimeButtons(parseInt(displayTimeInput.value, 10));
         });
 
         /**
-         * Handles image folder selection event.
-         * Reads selected image files and creates Blob URLs.
-         * @param {Event} event - Change event of the file input.
+         * Handles folder selection event from Main Menu via the new custom button.
          */
-        imageFolderInput.addEventListener('change', (event) => {
-            imageFiles = [];
-            imageUrls.forEach(url => URL.revokeObjectURL(url));
-            imageUrls = [];
-
-            const files = event.target.files;
-            if (files.length === 0) {
-                console.warn('No image folder selected or folder is empty.');
-                showCustomAlert('You did not select any folder, or the selected folder is empty.', 'Folder Selection');
-                folderInfo.textContent = 'No folder selected'; 
-                startButton.disabled = true; 
-                return;
-            }
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                // Store the original file path (only available in Electron for files selected via folder input)
-                // This path is needed for 'Open in Finder'
-                if (file.type.startsWith('image/')) {
-                    imageFiles.push(file); // This file object includes 'path' property in Electron
-                    imageUrls.push(URL.createObjectURL(file));
+        sketchFolderInputDisplay.addEventListener('click', async () => {
+            if (window.electronAPI) {
+                // When opening folder selection dialog, default to current loaded path or default path
+                const folderPath = await window.electronAPI.openFolderDialog(currentLoadedFolderPath || currentDefaultImageFolderPath || undefined);
+                if (folderPath) {
+                    showFolderBrowserView(folderPath); // Navigate to image library view and load
+                } else {
+                    // User canceled selection, do nothing (keep silent)
                 }
-            }
-            
-            if (imageUrls.length === 0) {
-                showCustomAlert('No image files found in the selected folder. Please choose a folder containing images.', 'Folder Selection');
-                folderInfo.textContent = 'No images found'; 
-                startButton.disabled = true; 
             } else {
-                const folderName = files[0].webkitRelativePath.split('/')[0];
-                showCustomAlert(`Successfully loaded ${imageUrls.length} images.`, 'Folder Selection');
-                folderInfo.textContent = `Selected folder: "${folderName}" (${imageUrls.length} images)`; 
-                startButton.disabled = false; 
+                showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
             }
-            console.log(`Loaded ${imageUrls.length} images.`);
         });
+
 
         /**
          * Starts the sketch session.
          * Validates settings, hides the menu, displays the image area, and starts playback.
+         * This function is now also called from advanceImage and when starting from the main menu.
          */
-        startButton.addEventListener('click', () => {
+        function initiateSketchSession() {
             displayTime = parseInt(displayTimeInput.value, 10);
 
             if (isNaN(displayTime) || displayTime <= 0) {
-                showCustomAlert('Please set a valid image display time (integer greater than 0).');
+                showCustomAlert('请设置一个有效的图片显示时间 (大于0的整数)。', '时间设置错误');
                 return;
             }
+            // Check if the current sketch image list is empty
             if (imageUrls.length === 0) {
-                showCustomAlert('Please select an image folder first.');
+                showCustomAlert('没有可供速写的图片。请先在图片库中选择一个文件夹。', '图片缺失错误');
                 return;
             }
 
@@ -1115,35 +1852,89 @@
             pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
 
             controlsMenu.classList.add('hidden');
-            imageDisplayArea.classList.remove('hidden');
+            folderBrowserView.classList.add('hidden'); // Hide image library view
+            imageDisplayArea.classList.remove('hidden'); // Show image display area
             
             // Apply preview background when entering preview mode
             applyBackground(currentPreviewBackgroundPath, true);
 
             isPlaying = true;
             
-            showNextImage(); 
-            // The startCountdown is called inside showNextImage, which handles the remainingTime reset for new images.
+            advanceImage(true); // Initiate with a new session start
             updateNavigationButtons(); 
+        }
+
+        // Main menu start button now calls unified initiateSketchSession
+        startButton.addEventListener('click', initiateSketchSession);
+        // "Select this folder" button in image library view now returns to main menu and sets path
+        selectFolderForSketchAndReturnToMenuButton.addEventListener('click', () => {
+            showMainMenu(currentLoadedFolderPath); // Return to main menu and pass current loaded folder path
         });
+
 
         /**
          * Sets preset time and updates the input field.
          * Also handles the active state of buttons.
          * @param {number} time - Preset time (seconds).
-         * @param {HTMLElement} activeButton - The currently clicked button element.
+         * @param {HTMLElement} [activeButton] - The currently clicked button element. If not provided, it's inferred.
          */
-        function setPresetTime(time, activeButton) {
+        function setPresetTime(time, activeButton = null) {
             displayTimeInput.value = time;
             displayTime = time;
+            updatePresetTimeButtons(time, activeButton);
+        }
 
+        /**
+         * Updates the active and disabled state of preset time buttons based on the current input value.
+         * @param {number} currentValue - The current value of the displayTimeInput.
+         * @param {HTMLElement} [clickedButton=null] - The button that was just clicked, if any.
+         */
+        function updatePresetTimeButtons(currentValue, clickedButton = null) {
             const presetButtons = presetTimeButtonsContainer.querySelectorAll('.toggle');
-            presetButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // If a button was clicked, activate it and make all others clickable
+            if (clickedButton) {
+                presetButtons.forEach(btn => {
+                    btn.classList.remove('active', 'disabled-preset');
+                });
+                clickedButton.classList.add('active');
+            } else {
+                // If value was manually typed, check for match
+                let matched = false;
+                presetButtons.forEach(btn => {
+                    const presetValue = parseInt(btn.textContent, 10); // Extract number from "XX秒"
+                    if (currentValue === presetValue) {
+                        btn.classList.add('active');
+                        btn.classList.remove('disabled-preset'); // Ensure it's not disabled if it matches
+                        matched = true;
+                    } else {
+                        btn.classList.remove('active');
+                        // If there's no match for the current input, disable other presets
+                        btn.classList.add('disabled-preset');
+                    }
+                });
 
-            if (activeButton) {
-                activeButton.classList.add('active');
+                // If no preset matched the manually entered value, ensure all are disabled-preset
+                if (!matched) {
+                    presetButtons.forEach(btn => btn.classList.add('disabled-preset'));
+                } else {
+                    // If there was a match, ensure unmatched buttons are not disabled for general use, only for the "active" state logic.
+                    // This means they should be clickable but not active.
+                    presetButtons.forEach(btn => {
+                        if (!btn.classList.contains('active')) {
+                            btn.classList.remove('disabled-preset'); // Make non-active but clickable
+                        }
+                    });
+                }
             }
         }
+
+        // Input event listener for displayTimeInput
+        displayTimeInput.addEventListener('input', (event) => {
+            const inputValue = parseInt(event.target.value, 10);
+            updatePresetTimeButtons(inputValue);
+        });
+
 
         // Preset time button event listeners
         preset30sButton.addEventListener('click', (event) => setPresetTime(30, event.target));
@@ -1167,6 +1958,24 @@
         });
 
         /**
+         * Toggles random/sequential playback.
+         */
+        randomPlaybackToggle.addEventListener('click', async () => {
+            isRandomPlayback = !isRandomPlayback;
+            randomPlaybackToggle.classList.toggle('active', isRandomPlayback);
+            if (window.electronAPI) {
+                await window.electronAPI.saveSetting('isRandomPlayback', isRandomPlayback);
+            }
+        });
+
+        /**
+         * Toggles between light and dark themes (from settings modal).
+         */
+        settingsModalThemeToggle.addEventListener('click', () => {
+            applyTheme(!isLightThemeEnabled); // Toggle the theme
+        });
+
+        /**
          * Changes the main menu background image.
          */
         changeMainMenuBackgroundButton.addEventListener('click', async () => {
@@ -1178,7 +1987,7 @@
                     await window.electronAPI.saveSetting('mainMenuBackgroundPath', currentMainMenuBackgroundPath);
                     showCustomAlert('主菜单背景图片已更新并保存。', '背景设置');
                 } else {
-                    showCustomAlert('您取消了背景图片选择。', '背景设置');
+                    // User canceled selection, do nothing (keep silent)
                 }
             } else {
                 showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
@@ -1212,7 +2021,7 @@
                     await window.electronAPI.saveSetting('previewBackgroundPath', currentPreviewBackgroundPath);
                     showCustomAlert('图片预览背景已更新并保存。', '背景设置');
                 } else {
-                    showCustomAlert('您取消了背景图片选择。', '背景设置');
+                    // User canceled selection, do nothing (keep silent)
                 }
             } else {
                 showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
@@ -1234,6 +2043,43 @@
             showCustomAlert('图片预览背景已重置为默认纯色。', '背景设置');
         });
 
+        /**
+         * Set default image folder path
+         */
+        setDefaultImageFolderButton.addEventListener('click', async () => {
+            if (window.electronAPI) {
+                // When opening folder selection dialog, default to current set path
+                const folderPath = await window.electronAPI.openFolderDialog(currentDefaultImageFolderPath || undefined);
+                if (folderPath) {
+                    currentDefaultImageFolderPath = folderPath;
+                    await window.electronAPI.saveSetting('defaultImageFolderPath', folderPath);
+                    defaultImageFolderPathDisplay.value = folderPath;
+                    showCustomAlert('默认图片文件夹路径已设置并保存。下次启动将自动加载。', '默认路径设置');
+                    // After setting, if currently in main menu or image library, should refresh image library view to display new default path content
+                    if (!controlsMenu.classList.contains('hidden') || !folderBrowserView.classList.contains('hidden')) {
+                        showFolderBrowserView(currentDefaultImageFolderPath);
+                    }
+                } else {
+                    // User canceled selection, do nothing (keep silent)
+                }
+            } else {
+                showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
+            }
+        });
+
+        /**
+         * Clear default image folder path
+         */
+        clearDefaultImageFolderButton.addEventListener('click', async () => {
+            currentDefaultImageFolderPath = '';
+            await window.electronAPI.saveSetting('defaultImageFolderPath', '');
+            defaultImageFolderPathDisplay.value = '未设置默认路径';
+            showCustomAlert('默认图片文件夹路径已清除。下次启动将显示主菜单。', '默认路径设置');
+            // After clearing, if currently in image library view, should return to main menu
+            if (!folderBrowserView.classList.contains('hidden')) {
+                showMainMenu();
+            }
+        });
 
         /**
          * Grid color picker change event
@@ -1332,7 +2178,7 @@
             if (window.electronAPI) { 
                 window.electronAPI.setAlwaysOnTop(isAlwaysOnTop);
             } else {
-                showCustomAlert('This feature is only available when packaged as a desktop application.', 'Tip');
+                showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
             }
         });
 
@@ -1349,48 +2195,80 @@
          */
         openInFinderButton.addEventListener('click', () => {
             if (window.electronAPI && currentImageIndex !== -1 && imageFiles[currentImageIndex] && imageFiles[currentImageIndex].path) {
+                // Use originalPath to open file, because file:// URL cannot be directly used in Finder
                 const currentFilePath = imageFiles[currentImageIndex].path; 
                 window.electronAPI.openFileInFinder(currentFilePath);
             } else {
-                showCustomAlert('This feature is only available when packaged as a desktop application, and an image folder must be selected.', 'Tip');
+                showCustomAlert('此功能仅在打包为桌面应用后可用，且需要选择图片文件夹。', '提示');
             }
         });
 
         /**
-         * Displays the next random image (or the next in history).
+         * Displays the next image in sequence or a random one, based on the playback mode.
+         * This function handles both automatic advancement (from timer) and manual 'next' clicks.
+         * It also updates history.
+         * @param {boolean} isStartingNewSession - True if this call initiates a new sketch session.
          */
-        function showNextImage() {
+        function advanceImage(isStartingNewSession = false) {
             if (imageUrls.length === 0) {
-                showCustomAlert('No images available for playback. Please select an image folder.', 'Error');
+                showCustomAlert('没有可供播放的图片。请选择一个图片文件夹。', '图片缺失错误');
                 stopGame();
                 return;
             }
 
-            // If in the middle of history, advance to the next in history
-            if (historyPointer < displayedImageHistory.length - 1) {
-                historyPointer++;
-                currentImageIndex = displayedImageHistory[historyPointer];
-            } else {
-                // Otherwise, generate a new random image and add to history
-                let newIndex;
-                if (imageUrls.length === 1) {
-                    newIndex = 0;
+            let newIndex;
+            if (isStartingNewSession) {
+                // Starting a completely new session or after "Select this folder"
+                displayedImageHistory = []; // Clear history
+                historyPointer = -1; // Reset pointer
+
+                if (isRandomPlayback) {
+                    newIndex = Math.floor(Math.random() * imageUrls.length);
                 } else {
-                    do {
-                        newIndex = Math.floor(Math.random() * imageUrls.length);
-                    } while (imageUrls.length > 1 && newIndex === currentImageIndex); 
+                    newIndex = 0; // Always start from the first image in sequential mode (after sorting)
                 }
-                currentImageIndex = newIndex;
-                displayedImageHistory.push(currentImageIndex);
-                historyPointer = displayedImageHistory.length - 1;
+                displayedImageHistory.push(newIndex);
+                historyPointer = 0;
+
+            } else { // Not starting a new session (timer tick or manual 'next' click)
+                if (!isRandomPlayback) {
+                    // Sequential playback: Try to use history first, then go to next in sequence
+                    if (historyPointer < displayedImageHistory.length - 1) {
+                        historyPointer++;
+                        newIndex = displayedImageHistory[historyPointer];
+                    } else {
+                        // At the end of history, get next sequential image
+                        newIndex = (currentImageIndex + 1) % imageUrls.length;
+                        displayedImageHistory.push(newIndex);
+                        historyPointer++;
+                    }
+                } else {
+                    // Random playback: Pick a new random image
+                    if (imageUrls.length === 1) {
+                        newIndex = 0; // Only one image, just show it
+                    } else {
+                        do {
+                            newIndex = Math.floor(Math.random() * imageUrls.length);
+                        } while (newIndex === currentImageIndex && imageUrls.length > 1);
+                    }
+
+                    // For random, if user clicked 'prev' then 'next', we are not truly "new"
+                    // If we navigated back, and now pick random, we truncate future history.
+                    if (historyPointer < displayedImageHistory.length - 1) {
+                        displayedImageHistory = displayedImageHistory.slice(0, historyPointer + 1);
+                    }
+                    displayedImageHistory.push(newIndex);
+                    historyPointer = displayedImageHistory.length - 1;
+                }
             }
 
+            currentImageIndex = newIndex;
             currentImage.src = imageUrls[currentImageIndex];
             applyImageEffects();
             remainingTime = displayTime; // Reset time for a new image
             updateCountdownDisplay();
-            updateNavigationButtons(); 
-            
+            updateNavigationButtons();
+
             // Ensure playback state
             if (isPaused) {
                 isPaused = false;
@@ -1401,30 +2279,31 @@
 
         /**
          * Displays the previous image in history.
+         * This function always navigates backward through the recorded history.
          */
         function showPreviousImage() {
             if (historyPointer > 0) {
-                clearInterval(countdownTimer); 
+                clearInterval(countdownTimer);
                 historyPointer--;
                 currentImageIndex = displayedImageHistory[historyPointer];
                 currentImage.src = imageUrls[currentImageIndex];
                 applyImageEffects();
                 remainingTime = displayTime; // Reset time for a new image from history
                 updateCountdownDisplay();
-                
-                // Ensure playback state
-                if (isPaused) {
-                    isPaused = false;
-                    pausePlayButton.textContent = '⏸';
+
+                // Ensure playback state (resume if was paused, otherwise keep playing)
+                if (!isPaused) { // Only restart countdown if not explicitly paused
+                    startCountdown();
                 }
-                startCountdown(); // Auto-start countdown after image switch
+            } else {
+                showCustomAlert('已是第一张图片。', '播放提示'); // User-friendly message
             }
-            updateNavigationButtons(); 
+            updateNavigationButtons();
         }
 
         // Navigation button event listeners
         prevImageButton.addEventListener('click', showPreviousImage);
-        nextImageButton.addEventListener('click', showNextImage);
+        nextImageButton.addEventListener('click', () => advanceImage(false)); // Do not force new when clicking next
 
         /**
          * Toggles pause/play for the countdown.
@@ -1447,7 +2326,7 @@
         /**
          * Starts the countdown.
          * This function now always uses the current 'remainingTime'.
-         * 'remainingTime' is reset to 'displayTime' only when a new image is loaded (in showNextImage/showPreviousImage).
+         * 'remainingTime' is set to 'displayTime' only when a new image is loaded (in advanceImage).
          */
         function startCountdown() {
             clearInterval(countdownTimer); 
@@ -1455,7 +2334,7 @@
                 return;
             }
 
-            // remainingTime is already set by showNextImage or showPreviousImage, or it's the value from before pausing.
+            // remainingTime is already set by advanceImage, or it's the value from before pausing.
             updateCountdownDisplay(); // Update display immediately when starting/resuming
 
             countdownTimer = setInterval(() => {
@@ -1464,7 +2343,7 @@
 
                 if (remainingTime <= 0) {
                     clearInterval(countdownTimer); 
-                    showNextImage(); 
+                    advanceImage(false); // Advance based on playback mode (not new session start)
                 }
             }, 1000); 
         }
@@ -1501,7 +2380,8 @@
          */
         function updateNavigationButtons() {
             prevImageButton.disabled = (historyPointer <= 0);
-            nextImageButton.disabled = (historyPointer === displayedImageHistory.length - 1 && imageUrls.length === 0);
+            // Next button is generally always enabled unless no images are loaded
+            nextImageButton.disabled = (imageUrls.length === 0);
             pausePlayButton.disabled = (imageUrls.length === 0 || !isPlaying);
         }
 
@@ -1520,6 +2400,9 @@
             if (!isGridEnabled) return; 
 
             ctx.lineWidth = 1;
+
+            // Use themed grid color
+            ctx.strokeStyle = hexToRgba(currentGridColorHex, gridAlpha);
 
             for (let x = 0; x < gridCanvas.width; x += currentGridSize) { 
                 ctx.beginPath();
@@ -1547,6 +2430,7 @@
 
             imageDisplayArea.classList.add('hidden'); 
             controlsMenu.classList.remove('hidden'); 
+            folderBrowserView.classList.add('hidden'); // Ensure image library view is also hidden
             currentImage.src = ''; 
             console.log('Sketch session stopped.');
 
@@ -1555,52 +2439,41 @@
             updateNavigationButtons(); 
         }
 
+        // Main menu return button
         backToMenuButton.addEventListener('click', stopGame);
 
-        /**
-         * Displays a custom alert box, replacing the native alert.
-         * @param {string} message - Message to display.
-         * @param {string} [title="Tip"] - Title of the alert box.
-         */
-        function showCustomAlert(message, title = "Tip") {
-            const alertBox = document.createElement('div');
-            alertBox.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(40, 44, 52, 0.9);
-                backdrop-filter: blur(5px);
-                border: 1px solid rgba(255, 255, 255, 0.18);
-                border-radius: 12px;
-                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-                padding: 25px;
-                z-index: 1000;
-                color: #e0e0e0;
-                text-align: center;
-                max-width: 400px; 
-                width: 90%;
-            `;
-            alertBox.innerHTML = `
-                <h3 style="margin-bottom: 15px; font-size: 1.3em;">${title}</h3>
-                <p style="margin-bottom: 20px; font-size: 1em; line-height: 1.5;">${message}</p>
-                <button id="alertCloseButton" style="
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 8px;
-                    background: linear-gradient(135deg, #0f3460, #16213e);
-                    color: #e0e0e0;
-                    font-weight: bold;
-                    cursor: pointer;
-                    transition: background 0.3s ease;
-                ">确定</button>
-            `;
-            document.body.appendChild(alertBox);
+        // "Select other folder" button in image library view
+        selectNewFolderFromBrowserButton.addEventListener('click', async () => {
+            if (window.electronAPI) {
+                // When opening folder selection dialog, default to current loaded path
+                const folderPath = await window.electronAPI.openFolderDialog(currentLoadedFolderPath || undefined);
+                if (folderPath) {
+                    showFolderBrowserView(folderPath); // Load newly selected folder
+                } else {
+                    // User canceled selection, stay in image library view (keep silent)
+                }
+            } else {
+                showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
+            }
+        });
 
-            document.getElementById('alertCloseButton').addEventListener('click', () => {
-                document.body.removeChild(alertBox);
-            });
-        }
+        // "Go up folder" button in image library view
+        goUpFolderButton.addEventListener('click', () => {
+            const parentPath = getParentPath(currentLoadedFolderPath);
+            if (parentPath) {
+                showFolderBrowserView(parentPath);
+            } else {
+                showCustomAlert('已是顶层文件夹。', '提示');
+            }
+        });
+
+        // "Back to main menu" button in image library view
+        backFromBrowserToMenuButton.addEventListener('click', () => showMainMenu());
+
+        // Pagination button event listeners
+        prevPageButton.addEventListener('click', showPreviousPageOfThumbnails);
+        nextPageButton.addEventListener('click', showNextPageOfThumbnails);
+
     </script>
 </body>
 </html>

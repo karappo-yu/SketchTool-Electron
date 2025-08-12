@@ -2,13 +2,21 @@
 
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs'); // 引入 Node.js 的 fs 模块
 const Store = require('electron-store'); // 引入 electron-store
 
-// 初始化存储实例，并设置默认的窗口边界
+// 初始化存储实例，并设置默认的窗口边界和默认图片文件夹路径
 const store = new Store({
     name: 'sketch-tool-settings', // 存储文件的唯一名称
     defaults: {
-        windowBounds: { width: 1000, height: 700, x: undefined, y: undefined } // 默认窗口大小和位置
+        windowBounds: { width: 1000, height: 700, x: undefined, y: undefined }, // 默认窗口大小和位置
+        defaultImageFolderPath: '', // 默认图片文件夹路径
+        mainMenuBackgroundPath: '', // 默认主菜单背景路径
+        previewBackgroundPath: '', // 默认预览背景路径
+        gridColor: '#FFFFFF', // 默认网格颜色
+        gridSize: 50, // 默认网格大小
+        timeFormat: 'minutes:seconds', // 默认时间格式
+        isRandomPlayback: true // 默认随机播放模式, 会在渲染进程加载并保存
     }
 });
 
@@ -121,6 +129,71 @@ ipcMain.handle('open-file-dialog', async () => {
 });
 
 /**
+ * IPC 通道：打开文件夹选择对话框，用于选择默认图片文件夹
+ * @returns {Promise<string|null>} - 选择的文件夹路径，如果取消则为 null
+ */
+ipcMain.handle('open-folder-dialog', async (event, currentPath = undefined) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory'], // 允许选择文件夹
+        defaultPath: currentPath // 默认为当前路径，提升用户体验
+    });
+    if (canceled) {
+        return null; // 用户取消选择
+    }
+    return filePaths[0]; // 返回选择的第一个文件夹路径
+});
+
+/**
+ * IPC 通道：读取指定文件夹内的文件和子文件夹
+ * @param {Event} event - IPC 事件对象
+ * @param {string} folderPath - 要读取的文件夹路径
+ * @returns {Promise<Array<{name: string, path: string, type: 'file'|'directory'}>>} - 文件和文件夹信息数组
+ */
+ipcMain.handle('read-folder-images', async (event, folderPath) => {
+    try {
+        const items = await fs.promises.readdir(folderPath);
+        const results = [];
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff']; // 常见图片扩展名
+
+        for (const item of items) {
+            const itemPath = path.join(folderPath, item);
+            let stats;
+            try {
+                stats = await fs.promises.stat(itemPath);
+            } catch (statError) {
+                // 如果文件或文件夹不可访问（例如权限问题），跳过
+                console.warn(`无法访问 ${itemPath}: ${statError.message}`);
+                continue;
+            }
+
+            if (stats.isDirectory()) {
+                results.push({
+                    name: item,
+                    path: itemPath, // 文件夹路径使用原始系统路径
+                    type: 'directory'
+                });
+            } else if (stats.isFile()) {
+                const ext = path.extname(item).toLowerCase();
+                if (imageExtensions.includes(ext)) {
+                    // 对于 Electron 渲染进程，图片需要使用 file:// 协议才能加载本地图片
+                    results.push({
+                        name: item,
+                        path: `file://${itemPath.replace(/\\/g, '/')}`, // 替换反斜杠以兼容 Windows 路径
+                        originalPath: itemPath, // 额外存储原始系统路径，用于'在 Finder 中打开'
+                        type: 'file'
+                    });
+                }
+            }
+        }
+        return results;
+    } catch (error) {
+        console.error('Failed to read folder contents:', error);
+        return []; // 返回空数组或抛出错误
+    }
+});
+
+
+/**
  * IPC 通道：在 Finder 中打开文件并选中
  * @param {Event} event - IPC 事件对象
  * @param {string} filePath - 要打开的文件路径
@@ -128,3 +201,30 @@ ipcMain.handle('open-file-dialog', async () => {
 ipcMain.handle('open-file-in-finder', (event, filePath) => {
     shell.showItemInFolder(filePath);
 });
+// main.js - ... (keep existing code above this line)
+
+/**
+ * IPC channel: Open file with system's default application
+ * @param {Event} event - IPC event object
+ * @param {string} filePath - The path of the file to open
+ */
+ipcMain.handle('open-file-in-default-app', async (event, filePath) => {
+    try {
+        const result = await shell.openPath(filePath);
+        if (result.cancelled) {
+            console.log('File opening was cancelled.');
+            return { success: false, message: '操作已取消。' };
+        } else if (result.error) {
+            console.error(`Failed to open ${filePath}: ${result.error}`);
+            return { success: false, message: `无法打开文件：${result.error}` };
+        } else {
+            console.log(`Successfully opened ${filePath}`);
+            return { success: true };
+        }
+    } catch (error) {
+        console.error(`Error opening file ${filePath}:`, error);
+        return { success: false, message: `打开文件时出错：${error.message}` };
+    }
+});
+
+// main.js - ... (keep existing code below this line, e.g., createWindow())
