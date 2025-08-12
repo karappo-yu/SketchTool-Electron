@@ -1,0 +1,38 @@
+{
+  "name": "sketch-tool-app",
+  "version": "1.0.0",
+  "description": "A time-limited sketch tool built with Electron with advanced features",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --mac"
+  },
+  "keywords": [
+    "Electron",
+    "sketch",
+    "tool",
+    "macOS",
+    "background",
+    "navigation"
+  ],
+  "author": "Cosmos",
+  "license": "MIT",
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.yourcompany.sketchtoolapp",
+    "mac": {
+      "icon": "build/icons/my-app-icon.icns",
+      "category": "public.app-category.graphics-design"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

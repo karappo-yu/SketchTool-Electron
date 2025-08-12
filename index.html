@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>限时速写工具</title>
+    <style>
+        /* CSS Reset 和全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            /* 默认深色渐变背景，此背景会在主菜单显示，或在预览时被覆盖 */
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            background-size: cover; /* 确保背景图片覆盖整个区域 */
+            background-position: center center; /* 居中显示背景图片 */
+            background-repeat: no-repeat; /* 防止背景图片重复 */
+            background-attachment: fixed; /* 背景固定，不随滚动条滚动 */
+            color: #e0e0e0;
+            overflow: hidden; /* 防止滚动条出现 */
+            transition: background 0.8s ease; /* 背景切换动画 */
+        }
+
+        /* 玻璃拟态效果基础样式 */
+        .glassmorphism {
+            background: rgba(40, 44, 52, 0.6); /* 半透明暗色背景 */
+            backdrop-filter: blur(10px); /* 模糊效果 */
+            border: 1px solid rgba(255, 255, 255, 0.18); /* 半透明边框 */
+            border-radius: 16px; /* 圆角 */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* 阴影 */
+            padding: 20px;
+            margin: 10px;
+        }
+
+        /* 整个应用的容器 */
+        #app-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 控制菜单 */
+        #controls-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 90%;
+            width: 400px; /* 菜单固定宽度 */
+        }
+
+        #controls-menu.hidden {
+            display: none;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 0.9em;
+            color: #c0c0c0;
+        }
+
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #e0e0e0;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        input[type="number"]:focus,
+        input[type="file"]:focus {
+            border-color: #0f3460;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 自定义文件选择按钮样式 */
+        input[type="file"]::-webkit-file-upload-button {
+            visibility: hidden;
+            width: 0;
+            padding: 0;
+            margin: 0;
+        }
+
+        input[type="file"]::before {
+            content: '选择图片文件夹';
+            display: inline-block;
+            background: linear-gradient(135deg, #0f3460, #16213e);
+            color: #e0e0e0;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            outline: none;
+            white-space: nowrap;
+            -webkit-user-select: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: background 0.3s ease;
+        }
+
+        input[type="file"]:hover::before {
+            background: linear-gradient(135deg, #16213e, #0f3460);
+        }
+
+        /* 文件夹信息显示 */
+        #folder-info {
+            font-size: 0.85em;
+            color: #a0a0a0;
+            margin-top: -5px; /* 紧贴在文件选择下方 */
+            text-align: center;
+            height: 1.2em; /* 预留空间，防止布局抖动 */
+        }
+
+        .buttons-group {
+            display: flex;
+            flex-wrap: wrap; /* 允许按钮换行 */
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            color: #e0e0e0;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button.primary {
+            /* 主按钮颜色 */
+            background: linear-gradient(135deg, #0f3460, #16213e);
+        }
+
+        button.primary:hover {
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        button.toggle {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+            padding: 8px 15px; /* 切换按钮较小 */
+        }
+
+        button.toggle.active {
+            /* 激活状态的切换按钮颜色 */
+            background: linear-gradient(135deg, #28a745, #218838);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+        }
+
+        button.toggle:not(.active):hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* 图片显示区域 */
+        #image-display-area {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            overflow: hidden; /* 确保图片不溢出 */
+        }
+
+        #current-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto; /* 允许图片按比例缩小 */
+            height: auto; /* 允许图片按比例缩小 */
+            object-fit: contain; /* 确保图片完整显示在容器内 */
+            transition: filter 0.5s ease, transform 0.5s ease;
+            user-select: none; /* 防止图片被选中 */
+            pointer-events: none; /* 防止默认图片拖拽/保存 */
+            flex-shrink: 0; /* 防止图片缩小到小于其内容 */
+        }
+
+        #image-display-area.hidden {
+            display: none;
+        }
+
+        /* 倒计时显示 */
+        #countdown {
+            position: absolute;
+            top: 20px; /* 调整位置到左上角 */
+            left: 20px; /* 调整位置到左上角 */
+            font-size: 3em;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            pointer-events: none; /* 允许点击穿透 */
+        }
+
+        /* 网格画布 */
+        #grid-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2; /* 在倒计时下方，图片上方 */
+            pointer-events: none; /* 允许点击穿透 */
+            opacity: 0; /* 初始隐藏 */
+            transition: opacity 0.5s ease;
+        }
+
+        #grid-canvas.active {
+            opacity: 1;
+        }
+
+        /* 图片特效 */
+        .mirror-effect {
+            transform: scaleX(-1);
+        }
+
+        .grayscale-effect {
+            filter: grayscale(100%);
+        }
+
+        /* 浮动控制菜单 (播放时鼠标悬停显示) - 右侧菜单 */
+        #overlay-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 15;
+            display: flex;
+            flex-direction: column; /* 按钮垂直堆叠 */
+            gap: 10px;
+            /* 默认隐藏，由父悬停区域控制显示 */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        /* 鼠标悬停区域 - 右侧 */
+        #right-controls-hover-zone {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px; /* 足够覆盖按钮区域的宽度，并留出一些容错空间 */
+            height: 100%;
+            z-index: 14; /* 位于菜单下方，但高于图片，以便捕获鼠标事件 */
+            pointer-events: auto; /* 允许鼠标事件 */
+            /* background-color: rgba(255,0,0,0.1); /* DEBUG */
+        }
+        #right-controls-hover-zone:hover #overlay-controls {
+            opacity: 1;
+            visibility: visible;
+        }
+        /* 优化右侧浮动菜单按钮的样式 - 统一为更精致的玻璃拟态方块 */
+        #overlay-controls button {
+            padding: 10px 15px; /* 统一内边距 */
+            font-size: 0.9em;
+            background: rgba(255, 255, 255, 0.15); /* 统一半透明基底色 */
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.25); /* 统一边框 */
+            border-radius: 8px; /* 统一圆角 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 统一阴影 */
+            width: auto; /* 自动宽度，根据内容调整 */
+            min-width: 40px; /* 最小宽度，防止太窄 */
+            height: 40px; /* 固定高度 */
+            display: flex; /* 使用 flexbox 对齐内容 */
+            align-items: center; /* 垂直居中内容 */
+            justify-content: center; /* 水平居中内容 (对于图标按钮) */
+            flex-shrink: 0; /* 防止被压缩 */
+            white-space: nowrap; /* 防止文本换行 */
+            position: relative; /* 用于 tooltip */
+        }
+
+        #overlay-controls button.primary {
+            background: linear-gradient(135deg, #0f3460, #16213e); /* 主按钮的渐变 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* 主按钮更强的阴影 */
+        }
+
+        #overlay-controls button.primary:hover {
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            transform: translateY(-1px); /* 轻微上浮 */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        #overlay-controls button.toggle.active {
+            background: linear-gradient(135deg, #28a745, #218838); /* 激活的开关按钮渐变 */
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+        }
+
+        #overlay-controls button.toggle:not(.active):hover {
+            background: rgba(255, 255, 255, 0.25); /* 未激活开关按钮的悬停效果 */
+        }
+
+        /* 图标按钮的特定样式 */
+        #overlay-controls button.icon-only {
+            padding: 0; /* 移除内边距 */
+            font-size: 1.2em; /* 图标大小 */
+            width: 40px; /* 固定为正方形 */
+            height: 40px;
+            overflow: hidden; /* 隐藏文本 */
+        }
+        #overlay-controls button.icon-only::after {
+            content: attr(data-tooltip); /* 使用 data-tooltip 作为提示文本 */
+            position: absolute;
+            bottom: 100%; /* 向上显示 */
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none; /* 确保不影响鼠标事件 */
+        }
+        #overlay-controls button.icon-only:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 图片底部导航按钮容器 */
+        #image-navigation-controls {
+            position: absolute;
+            bottom: 20px; /* 移到图片底部 */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            display: flex;
+            gap: 20px; /* 左右按钮间距 */
+            /* 默认隐藏，由父悬停区域控制显示 */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        /* 鼠标悬停区域 - 底部 */
+        #bottom-controls-hover-zone {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px; /* 足够覆盖底部按钮的高度，并留出一些容错空间 */
+            z-index: 14;
+            pointer-events: auto;
+            /* background-color: rgba(0,0,255,0.1); /* DEBUG */
+        }
+        #bottom-controls-hover-zone:hover #image-navigation-controls {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #image-navigation-controls button {
+            background: rgba(255, 255, 255, 0.35); /* 更醒目的背景 */
+            border-radius: 50%; /* 圆形按钮 */
+            width: 65px; /* 固定宽度，稍微增大 */
+            height: 65px; /* 固定高度，稍微增大 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em; /* 增大图标 */
+            color: rgba(255, 255, 255, 0.95); /* 更亮的颜色 */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* 更明显的阴影 */
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.6); /* 文本阴影让图标更突出 */
+            font-weight: bold; /* 使图标更粗 */
+        }
+
+        #image-navigation-controls button:hover {
+            background: rgba(255, 255, 255, 0.5); /* 悬停时更亮 */
+            transform: translateY(-4px) scale(1.1); /* 更明显的上浮和放大 */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+        }
+
+        #image-navigation-controls button:disabled {
+            background: rgba(255, 255, 255, 0.1); /* 禁用状态更暗更透明 */
+            color: rgba(255, 255, 255, 0.25); /* 禁用状态颜色更淡 */
+            cursor: not-allowed;
+            transform: translateY(0) scale(1);
+            box-shadow: none;
+        }
+
+
+        /* 新增：设置按钮样式 (主菜单右上角) */
+        #settings-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em; /* 图标大小 */
+            color: #e0e0e0;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+        #settings-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(15deg); /* 旋转效果 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #settings-button svg {
+            fill: currentColor; /* SVG 颜色跟随父元素 */
+        }
+
+
+        /* 新增：设置模态框 (overlay) */
+        #settings-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* 半透明黑色背景 */
+            backdrop-filter: blur(5px);
+            z-index: 20; /* 确保在最顶层 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #settings-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #settings-modal-content {
+            width: 450px; /* 比主菜单稍大 */
+            max-width: 90%;
+            padding: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #settings-modal-content h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #e0e0e0;
+            font-size: 1.8em;
+        }
+
+        #settings-modal-content .close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #c0c0c0;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            padding: 5px; /* 增加点击区域 */
+            border-radius: 50%;
+        }
+        #settings-modal-content .close-button:hover {
+            color: #e0e0e0;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 针对颜色输入框的样式 */
+        #gridColorPicker {
+            width: 100%;
+            height: 40px; /* 增加高度使其更易点击 */
+            padding: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        /* 隐藏颜色输入框的默认按钮 */
+        #gridColorPicker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        #gridColorPicker::-webkit-color-swatch {
+            border: none;
+            border-radius: 6px;
+        }
+
+        /* 针对单选按钮组的样式 */
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            justify-content: center;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .radio-group input[type="radio"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 1.15em;
+            height: 1.15em;
+            border: 0.15em solid currentColor;
+            border-radius: 50%;
+            transform: translateY(-0.075em);
+            display: grid;
+            place-content: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .radio-group input[type="radio"]::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: transform 0.2s ease-in-out;
+            box-shadow: inset 1em 1em var(--form-control-color, #28a745); /* 绿色小圆点 */
+            background-color: CanvasText;
+        }
+
+        .radio-group input[type="radio"]:checked::before {
+            transform: scale(1);
+        }
+        .radio-group input[type="radio"]:focus {
+            outline: max(2px, 0.15em) solid currentColor;
+            outline-offset: max(2px, 0.15em);
+        }
+
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            #controls-menu {
+                width: 95%; /* 调整小屏幕菜单宽度 */
+                padding: 15px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+
+            input[type="number"],
+            input[type="file"] {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+
+            input[type="file"]::before {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+
+            #countdown {
+                font-size: 2em;
+                top: 10px; /* 小屏幕调整位置 */
+                left: 10px; /* 小屏幕调整位置 */
+            }
+
+            #overlay-controls {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+            #overlay-controls button {
+                padding: 8px 12px;
+                font-size: 0.8em;
+                height: 35px; /* 小屏幕时高度减少 */
+                min-width: 35px; /* 小屏幕时最小宽度减少 */
+            }
+            #overlay-controls button.icon-only {
+                width: 35px;
+                height: 35px;
+            }
+
+            #image-navigation-controls button {
+                width: 50px;
+                height: 50px;
+                font-size: 2em;
+            }
+
+            #settings-button {
+                width: 35px;
+                height: 35px;
+                font-size: 1.2em;
+                top: 10px;
+                right: 10px;
+            }
+
+            #settings-modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            .radio-group {
+                flex-direction: column; /* 小屏幕上单选按钮垂直排列 */
+            }
+            #right-controls-hover-zone {
+                width: 100px; /* 小屏幕时缩小悬停区域 */
+            }
+            #bottom-controls-hover-zone {
+                height: 70px; /* 小屏幕时缩小悬停区域 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- 控制菜单 -->
+        <div id="controls-menu" class="glassmorphism">
+            <h1>限时速写工具</h1>
+            <div class="input-group">
+                <label for="imageFolder">选择图片文件夹:</label>
+                <input type="file" id="imageFolder" webkitdirectory directory multiple accept="image/*">
+                <div id="folder-info"></div> <!-- 显示文件夹信息 -->
+            </div>
+            <div class="input-group">
+                <label for="displayTime">每张图片显示时间 (秒):</label>
+                <input type="number" id="displayTime" value="60" min="1">
+            </div>
+            <!-- 常用时间选项 - 放在同一行 -->
+            <div class="buttons-group" id="preset-time-buttons" style="flex-wrap: nowrap; overflow-x: auto;">
+                <button id="preset30s" class="toggle">30秒</button>
+                <button id="preset60s" class="toggle active">60秒</button> <!-- 默认激活 -->
+                <button id="preset120s" class="toggle">120秒</button>
+                <button id="preset300s" class="toggle">300秒</button>
+                <button id="preset600s" class="toggle">600秒</button>
+            </div>
+            <div class="buttons-group">
+                <button id="startButton" class="primary">开始速写</button>
+            </div>
+            <div class="buttons-group">
+                <button id="mirrorToggle" class="toggle">镜像</button>
+                <button id="grayscaleToggle" class="toggle">灰度</button>
+                <button id="gridToggle" class="toggle">网格</button>
+            </div>
+            <p style="font-size: 0.8em; text-align: center; color: #a0a0a0; margin-top: 15px;">小提示: 开始后鼠标悬停在图片上可显示控制菜单。</p>
+
+            <!-- 设置按钮 - 右上角图标 -->
+            <button id="settings-button" class="toggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.1-.69-1.72-.94L14.44 2.87c-.07-.23-.28-.39-.52-.39h-4c-.24 0-.45.16-.52.39L9.17 5.75c-.62.25-1.19.55-1.72.94l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.1.69 1.72.94l.44 2.88c.07.23.28.39.52.39h4c.24 0 .45-.16.52-.39l.44-2.88c.62-.25 1.19-.55 1.72-.94l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- 图片显示区域 -->
+        <div id="image-display-area" class="hidden">
+            <img id="current-image" src="" alt="当前速写图片">
+            <canvas id="grid-canvas"></canvas>
+            <div id="countdown"></div>
+
+            <!-- 鼠标悬停区域 - 右侧 -->
+            <div id="right-controls-hover-zone">
+                <!-- 浮动控制菜单 (播放时鼠标悬停显示) -->
+                <div id="overlay-controls" class="glassmorphism">
+                    <button id="openInFinderButton" class="toggle icon-only" data-tooltip="在文件夹中打开">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                        </svg>
+                    </button>
+                    <button id="overlayMirrorToggle" class="toggle icon-only" data-tooltip="镜像">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11 5H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h5v2h2V3h-2v2zm7 0h-5v2h5c1.1 0 2 .9 2 2v6c0 1.1-.9 2-2 2h-5v2h5c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/>
+                        </svg>
+                    </button>
+                    <button id="overlayGrayscaleToggle" class="toggle icon-only" data-tooltip="灰度">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 4h-4L12 12 8 4H4v16h4v-8l4 8 4-8v8h4V4zm-8 4l-4 8H8l4-8 4 8h-4V4z"/>
+                        </svg>
+                    </button>
+                    <button id="overlayGridToggle" class="toggle icon-only" data-tooltip="网格">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20H4v-4h4v4zm0-6H4v-4h4v4zm0-6H4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4z"/>
+                        </svg>
+                    </button>
+                    <button id="toggleAlwaysOnTopButton" class="toggle icon-only" data-tooltip="置顶">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 17h10V7H7v10zm2-8h6v6H9V9zm-5 4V9c0-1.1.9-2 2-2h4V5H6c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h4v-2H6v2c-1.1 0-2-.9-2-2zm14 0c0 1.1-.9 2-2 2h-4v2h4c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-4v2h4v2c1.1 0 2 .9 2 2v4z"/>
+                        </svg>
+                    </button>
+                    <button id="backToMenuButton" class="primary icon-only" data-tooltip="返回菜单" style="font-size: 1.5em;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 鼠标悬停区域 - 底部 -->
+            <div id="bottom-controls-hover-zone">
+                <!-- 图片底部导航按钮 -->
+                <div id="image-navigation-controls">
+                    <button id="prevImageButton" class="toggle">
+                        ‹
+                    </button>
+                    <button id="pausePlayButton" class="toggle">
+                        <!-- 初始为暂停图标 -->
+                        ⏸
+                    </button>
+                    <button id="nextImageButton" class="toggle">
+                        ›
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div id="settings-modal-overlay">
+        <div id="settings-modal-content" class="glassmorphism">
+            <button class="close-button" id="closeSettingsModal">&times;</button>
+            <h2>设置</h2>
+            <!-- 主菜单背景设置 -->
+            <div class="input-group">
+                <label>主菜单背景:</label>
+                <div class="buttons-group">
+                    <button id="changeMainMenuBackgroundButton" class="primary">更换主菜单背景</button>
+                    <button id="resetMainMenuBackgroundButton" class="primary">重置主菜单背景</button>
+                </div>
+            </div>
+            <!-- 图片预览背景设置 -->
+            <div class="input-group">
+                <label>图片预览背景:</label>
+                <div class="buttons-group">
+                    <button id="changePreviewBackgroundButton" class="primary">更换预览背景</button>
+                    <button id="resetPreviewBackgroundButton" class="primary">重置预览背景</button>
+                </div>
+            </div>
+            <!-- 网格颜色设置 -->
+            <div class="input-group">
+                <label for="gridColorPicker">网格颜色:</label>
+                <input type="color" id="gridColorPicker" value="#FFFFFF"> <!-- 初始默认白色 -->
+            </div>
+            <div class="buttons-group">
+                <button id="resetGridColorButton" class="primary">重置网格颜色</button>
+            </div>
+            <!-- 网格大小设置 -->
+            <div class="input-group">
+                <label for="gridSizeInput">网格大小 (像素):</label>
+                <input type="number" id="gridSizeInput" value="50" min="10" max="200" step="10">
+            </div>
+            <div class="buttons-group">
+                <button id="resetGridSizeButton" class="primary">重置网格大小</button>
+            </div>
+            <!-- 显示时间格式设置 -->
+            <div class="input-group">
+                <label>显示时间格式:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="timeFormat" value="minutes:seconds" checked> 分:秒</label>
+                    <label><input type="radio" name="timeFormat" value="seconds"> 秒</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取 DOM 元素
+        const appContainer = document.getElementById('app-container');
+        const controlsMenu = document.getElementById('controls-menu');
+        const imageFolderInput = document.getElementById('imageFolder');
+        const folderInfo = document.getElementById('folder-info'); 
+        const displayTimeInput = document.getElementById('displayTime');
+        const startButton = document.getElementById('startButton');
+        const mirrorToggle = document.getElementById('mirrorToggle');
+        const grayscaleToggle = document.getElementById('grayscaleToggle');
+        const gridToggle = document.getElementById('gridToggle');
+
+        // 常用时间按钮及其容器
+        const presetTimeButtonsContainer = document.getElementById('preset-time-buttons');
+        const preset30sButton = document.getElementById('preset30s');
+        const preset60sButton = document.getElementById('preset60s'); 
+        const preset120sButton = document.getElementById('preset120s');
+        const preset300sButton = document.getElementById('preset300s'); 
+        const preset600sButton = document.getElementById('preset600s'); 
+
+        const imageDisplayArea = document.getElementById('image-display-area');
+        const currentImage = document.getElementById('current-image');
+        const countdownElement = document.getElementById('countdown');
+        const gridCanvas = document.getElementById('grid-canvas');
+        const ctx = gridCanvas.getContext('2d'); 
+
+        // 右侧浮动控制菜单及悬停区域
+        const rightControlsHoverZone = document.getElementById('right-controls-hover-zone');
+        const overlayControls = document.getElementById('overlay-controls');
+        const openInFinderButton = document.getElementById('openInFinderButton'); 
+        const overlayMirrorToggle = document.getElementById('overlayMirrorToggle');
+        const overlayGrayscaleToggle = document.getElementById('overlayGrayscaleToggle');
+        const overlayGridToggle = document.getElementById('overlayGridToggle');
+        const toggleAlwaysOnTopButton = document.getElementById('toggleAlwaysOnTopButton'); 
+        const backToMenuButton = document.getElementById('backToMenuButton');
+
+        // 图片底部导航按钮及悬停区域
+        const bottomControlsHoverZone = document.getElementById('bottom-controls-hover-zone');
+        const imageNavigationControls = document.getElementById('image-navigation-controls'); 
+        const prevImageButton = document.getElementById('prevImageButton'); 
+        const nextImageButton = document.getElementById('nextImageButton'); 
+        const pausePlayButton = document.getElementById('pausePlayButton'); 
+
+        // 设置模态框相关元素
+        const settingsButton = document.getElementById('settings-button'); 
+        const settingsModalOverlay = document.getElementById('settings-modal-overlay');
+        const closeSettingsModalButton = document.getElementById('closeSettingsModal');
+        const changeMainMenuBackgroundButton = document.getElementById('changeMainMenuBackgroundButton'); 
+        const resetMainMenuBackgroundButton = document.getElementById('resetMainMenuBackgroundButton'); 
+        const changePreviewBackgroundButton = document.getElementById('changePreviewBackgroundButton'); 
+        const resetPreviewBackgroundButton = document.getElementById('resetPreviewBackgroundButton'); 
+        const gridColorPicker = document.getElementById('gridColorPicker'); 
+        const resetGridColorButton = document.getElementById('resetGridColorButton'); 
+        const gridSizeInput = document.getElementById('gridSizeInput'); 
+        const resetGridSizeButton = document.getElementById('resetGridSizeButton'); 
+        const timeFormatRadios = document.querySelectorAll('input[name="timeFormat"]'); 
+
+        // 状态变量
+        let imageFiles = []; 
+        let imageUrls = []; 
+        let currentImageIndex = -1; 
+        let displayTime = 60; 
+        let countdownTimer; 
+        let remainingTime; 
+        let isPlaying = false; 
+        let isPaused = false; 
+
+        // 特效状态
+        let isMirrorEnabled = false;
+        let isGrayscaleEnabled = false;
+        let isGridEnabled = false;
+        let isAlwaysOnTop = false; 
+
+        // 图片播放历史
+        let displayedImageHistory = [];
+        let historyPointer = -1; 
+
+        // 默认设置值
+        const defaultMainMenuBackground = 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)';
+        const defaultPreviewBackground = '#1a1a2e'; // 纯深色背景作为默认预览背景
+        const defaultGridColorHex = '#FFFFFF'; 
+        const defaultGridSize = 50; 
+        const defaultTimeFormat = 'minutes:seconds'; 
+        const gridAlpha = 0.3; 
+
+        // 当前设置值（会从存储中加载）
+        let currentMainMenuBackgroundPath = ''; 
+        let currentPreviewBackgroundPath = ''; 
+        let currentGridColorHex = defaultGridColorHex;
+        let currentGridSize = defaultGridSize;
+        let currentTimeFormat = defaultTimeFormat;
+
+
+        /**
+         * Helper function: Converts Hex color to RGBA string
+         * @param {string} hex - Hex color value (e.g., #RRGGBB)
+         * @param {number} alpha - Alpha transparency (0-1)
+         * @returns {string} - RGBA color string (e.g., rgba(255, 255, 255, 0.3))
+         */
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        /**
+         * Sets grid color and saves to settings.
+         * @param {string} hexColor - Hex color value to set.
+         */
+        function setGridColor(hexColor) {
+            currentGridColorHex = hexColor;
+            ctx.strokeStyle = hexToRgba(currentGridColorHex, gridAlpha);
+            if (window.electronAPI) {
+                window.electronAPI.saveSetting('gridColor', currentGridColorHex);
+            }
+            if (isGridEnabled && !imageDisplayArea.classList.contains('hidden')) {
+                drawGrid();
+            }
+        }
+
+        /**
+         * Sets grid size and saves to settings.
+         * @param {number} size - Grid size (pixels).
+         */
+        function setGridSize(size) {
+            currentGridSize = size;
+            if (window.electronAPI) {
+                window.electronAPI.saveSetting('gridSize', currentGridSize);
+            }
+            if (isGridEnabled && !imageDisplayArea.classList.contains('hidden')) {
+                drawGrid();
+            }
+        }
+
+        /**
+         * Sets time display format and saves to settings.
+         * @param {string} format - Time format ('minutes:seconds' or 'seconds').
+         */
+        function setTimeFormat(format) {
+            currentTimeFormat = format;
+            if (window.electronAPI) {
+                window.electronAPI.saveSetting('timeFormat', currentTimeFormat);
+            }
+            updateCountdownDisplay(); // Update display immediately
+        }
+
+        /**
+         * Applies background to the body element.
+         * @param {string|null} filePath - Background image file path, or null to use default gradient/color.
+         * @param {boolean} isPreview - True if applying to preview, false for main menu.
+         */
+        function applyBackground(filePath, isPreview = false) {
+            if (filePath) {
+                document.body.style.backgroundImage = `url('file://${filePath}')`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundAttachment = 'fixed';
+                document.body.style.backgroundColor = ''; // Clear solid color if image is set
+            } else {
+                if (isPreview) {
+                    document.body.style.backgroundImage = `none`; // Clear image background
+                    document.body.style.backgroundColor = defaultPreviewBackground; // Apply default solid color
+                } else {
+                    document.body.style.backgroundImage = defaultMainMenuBackground; // Apply default gradient for main menu
+                    document.body.style.backgroundColor = ''; // Clear solid color
+                }
+            }
+        }
+
+        /**
+         * Initialization function, loads all saved settings
+         */
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.electronAPI) {
+                // Load main menu background image
+                currentMainMenuBackgroundPath = await window.electronAPI.loadSetting('mainMenuBackgroundPath') || '';
+                applyBackground(currentMainMenuBackgroundPath, false);
+
+                // Load preview background image path
+                currentPreviewBackgroundPath = await window.electronAPI.loadSetting('previewBackgroundPath') || '';
+                // The actual preview background will be applied when entering preview mode
+
+                // Load grid color
+                const savedGridColor = await window.electronAPI.loadSetting('gridColor');
+                if (savedGridColor) {
+                    gridColorPicker.value = savedGridColor;
+                    setGridColor(savedGridColor); 
+                } else {
+                    gridColorPicker.value = defaultGridColorHex;
+                    setGridColor(defaultGridColorHex);
+                }
+
+                // Load grid size
+                const savedGridSize = await window.electronAPI.loadSetting('gridSize');
+                if (savedGridSize) {
+                    gridSizeInput.value = savedGridSize;
+                    setGridSize(savedGridSize); 
+                } else {
+                    gridSizeInput.value = defaultGridSize;
+                    setGridSize(defaultGridSize);
+                }
+
+                // Load time format
+                const savedTimeFormat = await window.electronAPI.loadSetting('timeFormat');
+                if (savedTimeFormat) {
+                    currentTimeFormat = savedTimeFormat;
+                    timeFormatRadios.forEach(radio => {
+                        if (radio.value === savedTimeFormat) {
+                            radio.checked = true;
+                        }
+                    });
+                    setTimeFormat(savedTimeFormat); 
+                } else {
+                    currentTimeFormat = defaultTimeFormat;
+                    timeFormatRadios.forEach(radio => {
+                        if (radio.value === defaultTimeFormat) {
+                            radio.checked = true;
+                        }
+                    });
+                    setTimeFormat(defaultTimeFormat);
+                }
+
+            } else {
+                // If not in Electron environment, use default values
+                applyBackground(null, false); // Default main menu background
+                currentPreviewBackgroundPath = ''; // Preview background defaults to empty
+                gridColorPicker.value = defaultGridColorHex;
+                setGridColor(defaultGridColorHex);
+                gridSizeInput.value = defaultGridSize;
+                setGridSize(defaultGridSize);
+                currentTimeFormat = defaultTimeFormat;
+                timeFormatRadios.forEach(radio => {
+                    if (radio.value === defaultTimeFormat) {
+                        radio.checked = true;
+                    }
+                });
+            }
+
+            // Initialize button states
+            startButton.disabled = true; 
+            mirrorToggle.classList.toggle('active', isMirrorEnabled);
+            grayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
+            gridToggle.classList.toggle('active', isGridEnabled);
+            overlayMirrorToggle.classList.toggle('active', isMirrorEnabled);
+            overlayGrayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
+            overlayGridToggle.classList.toggle('active', isGridEnabled);
+            toggleAlwaysOnTopButton.classList.toggle('active', isAlwaysOnTop); 
+
+            // Default activate 60-second button style and ensure input also shows 60
+            setPresetTime(60, preset60sButton);
+        });
+
+        /**
+         * Handles image folder selection event.
+         * Reads selected image files and creates Blob URLs.
+         * @param {Event} event - Change event of the file input.
+         */
+        imageFolderInput.addEventListener('change', (event) => {
+            imageFiles = [];
+            imageUrls.forEach(url => URL.revokeObjectURL(url));
+            imageUrls = [];
+
+            const files = event.target.files;
+            if (files.length === 0) {
+                console.warn('No image folder selected or folder is empty.');
+                showCustomAlert('You did not select any folder, or the selected folder is empty.', 'Folder Selection');
+                folderInfo.textContent = 'No folder selected'; 
+                startButton.disabled = true; 
+                return;
+            }
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                // Store the original file path (only available in Electron for files selected via folder input)
+                // This path is needed for 'Open in Finder'
+                if (file.type.startsWith('image/')) {
+                    imageFiles.push(file); // This file object includes 'path' property in Electron
+                    imageUrls.push(URL.createObjectURL(file));
+                }
+            }
+            
+            if (imageUrls.length === 0) {
+                showCustomAlert('No image files found in the selected folder. Please choose a folder containing images.', 'Folder Selection');
+                folderInfo.textContent = 'No images found'; 
+                startButton.disabled = true; 
+            } else {
+                const folderName = files[0].webkitRelativePath.split('/')[0];
+                showCustomAlert(`Successfully loaded ${imageUrls.length} images.`, 'Folder Selection');
+                folderInfo.textContent = `Selected folder: "${folderName}" (${imageUrls.length} images)`; 
+                startButton.disabled = false; 
+            }
+            console.log(`Loaded ${imageUrls.length} images.`);
+        });
+
+        /**
+         * Starts the sketch session.
+         * Validates settings, hides the menu, displays the image area, and starts playback.
+         */
+        startButton.addEventListener('click', () => {
+            displayTime = parseInt(displayTimeInput.value, 10);
+
+            if (isNaN(displayTime) || displayTime <= 0) {
+                showCustomAlert('Please set a valid image display time (integer greater than 0).');
+                return;
+            }
+            if (imageUrls.length === 0) {
+                showCustomAlert('Please select an image folder first.');
+                return;
+            }
+
+            // Reset image history
+            displayedImageHistory = [];
+            historyPointer = -1;
+            isPaused = false; // Ensure not paused when starting
+            pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
+
+            controlsMenu.classList.add('hidden');
+            imageDisplayArea.classList.remove('hidden');
+            
+            // Apply preview background when entering preview mode
+            applyBackground(currentPreviewBackgroundPath, true);
+
+            isPlaying = true;
+            
+            showNextImage(); 
+            // The startCountdown is called inside showNextImage, which handles the remainingTime reset for new images.
+            updateNavigationButtons(); 
+        });
+
+        /**
+         * Sets preset time and updates the input field.
+         * Also handles the active state of buttons.
+         * @param {number} time - Preset time (seconds).
+         * @param {HTMLElement} activeButton - The currently clicked button element.
+         */
+        function setPresetTime(time, activeButton) {
+            displayTimeInput.value = time;
+            displayTime = time;
+
+            const presetButtons = presetTimeButtonsContainer.querySelectorAll('.toggle');
+            presetButtons.forEach(btn => btn.classList.remove('active'));
+
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+        }
+
+        // Preset time button event listeners
+        preset30sButton.addEventListener('click', (event) => setPresetTime(30, event.target));
+        preset60sButton.addEventListener('click', (event) => setPresetTime(60, event.target));
+        preset120sButton.addEventListener('click', (event) => setPresetTime(120, event.target));
+        preset300sButton.addEventListener('click', (event) => setPresetTime(300, event.target)); 
+        preset600sButton.addEventListener('click', (event) => setPresetTime(600, event.target)); 
+
+        /**
+         * Opens the settings modal.
+         */
+        settingsButton.addEventListener('click', () => {
+            settingsModalOverlay.classList.add('active');
+        });
+
+        /**
+         * Closes the settings modal.
+         */
+        closeSettingsModalButton.addEventListener('click', () => {
+            settingsModalOverlay.classList.remove('active');
+        });
+
+        /**
+         * Changes the main menu background image.
+         */
+        changeMainMenuBackgroundButton.addEventListener('click', async () => {
+            if (window.electronAPI) {
+                const filePath = await window.electronAPI.openFileDialog();
+                if (filePath) {
+                    currentMainMenuBackgroundPath = filePath;
+                    applyBackground(currentMainMenuBackgroundPath, false); // Apply to main menu
+                    await window.electronAPI.saveSetting('mainMenuBackgroundPath', currentMainMenuBackgroundPath);
+                    showCustomAlert('主菜单背景图片已更新并保存。', '背景设置');
+                } else {
+                    showCustomAlert('您取消了背景图片选择。', '背景设置');
+                }
+            } else {
+                showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
+            }
+        });
+
+        /**
+         * Resets the main menu background to default gradient.
+         */
+        resetMainMenuBackgroundButton.addEventListener('click', async () => {
+            currentMainMenuBackgroundPath = ''; // Clear path
+            applyBackground(currentMainMenuBackgroundPath, false); // Apply default gradient
+            if (window.electronAPI) {
+                await window.electronAPI.saveSetting('mainMenuBackgroundPath', ''); 
+            }
+            showCustomAlert('主菜单背景已重置为默认渐变。', '背景设置');
+        });
+
+        /**
+         * Changes the image preview background image.
+         */
+        changePreviewBackgroundButton.addEventListener('click', async () => {
+            if (window.electronAPI) {
+                const filePath = await window.electronAPI.openFileDialog();
+                if (filePath) {
+                    currentPreviewBackgroundPath = filePath;
+                    // If currently in preview mode, apply immediately
+                    if (!imageDisplayArea.classList.contains('hidden')) {
+                        applyBackground(currentPreviewBackgroundPath, true); // Apply to preview
+                    }
+                    await window.electronAPI.saveSetting('previewBackgroundPath', currentPreviewBackgroundPath);
+                    showCustomAlert('图片预览背景已更新并保存。', '背景设置');
+                } else {
+                    showCustomAlert('您取消了背景图片选择。', '背景设置');
+                }
+            } else {
+                showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
+            }
+        });
+
+        /**
+         * Resets the image preview background to default solid color.
+         */
+        resetPreviewBackgroundButton.addEventListener('click', async () => {
+            currentPreviewBackgroundPath = ''; // Clear path
+            // If currently in preview mode, apply immediately
+            if (!imageDisplayArea.classList.contains('hidden')) {
+                applyBackground(currentPreviewBackgroundPath, true); // Apply default solid color
+            }
+            if (window.electronAPI) {
+                await window.electronAPI.saveSetting('previewBackgroundPath', ''); 
+            }
+            showCustomAlert('图片预览背景已重置为默认纯色。', '背景设置');
+        });
+
+
+        /**
+         * Grid color picker change event
+         */
+        gridColorPicker.addEventListener('input', (event) => {
+            setGridColor(event.target.value); 
+        });
+
+        /**
+         * Resets grid color
+         */
+        resetGridColorButton.addEventListener('click', () => {
+            gridColorPicker.value = defaultGridColorHex;
+            setGridColor(defaultGridColorHex);
+            showCustomAlert('网格颜色已重置为默认。', '网格设置');
+        });
+
+        /**
+         * Grid size input change event
+         */
+        gridSizeInput.addEventListener('input', (event) => {
+            const size = parseInt(event.target.value, 10);
+            if (!isNaN(size) && size >= 10 && size <= 200) { 
+                setGridSize(size);
+            } else {
+                console.warn('Invalid grid size input.');
+            }
+        });
+
+        /**
+         * Resets grid size
+         */
+        resetGridSizeButton.addEventListener('click', () => {
+            gridSizeInput.value = defaultGridSize;
+            setGridSize(defaultGridSize);
+            showCustomAlert('网格大小已重置为默认。', '网格设置');
+        });
+
+        /**
+         * Time format radio button change event
+         */
+        timeFormatRadios.forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                setTimeFormat(event.target.value);
+            });
+        });
+
+        /**
+         * Toggles mirror effect.
+         */
+        function toggleMirrorEffect() {
+            isMirrorEnabled = !isMirrorEnabled;
+            currentImage.classList.toggle('mirror-effect', isMirrorEnabled);
+            mirrorToggle.classList.toggle('active', isMirrorEnabled);
+            overlayMirrorToggle.classList.toggle('active', isMirrorEnabled);
+        }
+        mirrorToggle.addEventListener('click', toggleMirrorEffect);
+        overlayMirrorToggle.addEventListener('click', toggleMirrorEffect);
+
+        /**
+         * Toggles grayscale effect.
+         */
+        function toggleGrayscaleEffect() {
+            isGrayscaleEnabled = !isGrayscaleEnabled;
+            currentImage.classList.toggle('grayscale-effect', isGrayscaleEnabled);
+            grayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
+            overlayGrayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
+        }
+        grayscaleToggle.addEventListener('click', toggleGrayscaleEffect);
+        overlayGrayscaleToggle.addEventListener('click', toggleGrayscaleEffect);
+
+        /**
+         * Toggles grid overlay effect.
+         */
+        function toggleGridEffect() {
+            isGridEnabled = !isGridEnabled;
+            gridCanvas.classList.toggle('active', isGridEnabled);
+            gridToggle.classList.toggle('active', isGridEnabled);
+            overlayGridToggle.classList.toggle('active', isGridEnabled);
+            if (isGridEnabled) {
+                if (currentImage.complete) { 
+                    drawGrid();
+                }
+            } else {
+                ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); 
+            }
+        }
+        gridToggle.addEventListener('click', toggleGridEffect);
+        overlayGridToggle.addEventListener('click', toggleGridEffect);
+
+        /**
+         * Toggles window always-on-top status.
+         */
+        toggleAlwaysOnTopButton.addEventListener('click', () => {
+            isAlwaysOnTop = !isAlwaysOnTop;
+            if (window.electronAPI) { 
+                window.electronAPI.setAlwaysOnTop(isAlwaysOnTop);
+            } else {
+                showCustomAlert('This feature is only available when packaged as a desktop application.', 'Tip');
+            }
+        });
+
+        // Listen for always-on-top status from main process to sync button state
+        if (window.electronAPI) {
+            window.electronAPI.onAlwaysOnTopStatus((status) => {
+                isAlwaysOnTop = status;
+                toggleAlwaysOnTopButton.classList.toggle('active', isAlwaysOnTop);
+            });
+        }
+
+        /**
+         * Opens the current image in Finder.
+         */
+        openInFinderButton.addEventListener('click', () => {
+            if (window.electronAPI && currentImageIndex !== -1 && imageFiles[currentImageIndex] && imageFiles[currentImageIndex].path) {
+                const currentFilePath = imageFiles[currentImageIndex].path; 
+                window.electronAPI.openFileInFinder(currentFilePath);
+            } else {
+                showCustomAlert('This feature is only available when packaged as a desktop application, and an image folder must be selected.', 'Tip');
+            }
+        });
+
+        /**
+         * Displays the next random image (or the next in history).
+         */
+        function showNextImage() {
+            if (imageUrls.length === 0) {
+                showCustomAlert('No images available for playback. Please select an image folder.', 'Error');
+                stopGame();
+                return;
+            }
+
+            // If in the middle of history, advance to the next in history
+            if (historyPointer < displayedImageHistory.length - 1) {
+                historyPointer++;
+                currentImageIndex = displayedImageHistory[historyPointer];
+            } else {
+                // Otherwise, generate a new random image and add to history
+                let newIndex;
+                if (imageUrls.length === 1) {
+                    newIndex = 0;
+                } else {
+                    do {
+                        newIndex = Math.floor(Math.random() * imageUrls.length);
+                    } while (imageUrls.length > 1 && newIndex === currentImageIndex); 
+                }
+                currentImageIndex = newIndex;
+                displayedImageHistory.push(currentImageIndex);
+                historyPointer = displayedImageHistory.length - 1;
+            }
+
+            currentImage.src = imageUrls[currentImageIndex];
+            applyImageEffects();
+            remainingTime = displayTime; // Reset time for a new image
+            updateCountdownDisplay();
+            updateNavigationButtons(); 
+            
+            // Ensure playback state
+            if (isPaused) {
+                isPaused = false;
+                pausePlayButton.textContent = '⏸';
+            }
+            startCountdown(); // Auto-start countdown after image switch
+        }
+
+        /**
+         * Displays the previous image in history.
+         */
+        function showPreviousImage() {
+            if (historyPointer > 0) {
+                clearInterval(countdownTimer); 
+                historyPointer--;
+                currentImageIndex = displayedImageHistory[historyPointer];
+                currentImage.src = imageUrls[currentImageIndex];
+                applyImageEffects();
+                remainingTime = displayTime; // Reset time for a new image from history
+                updateCountdownDisplay();
+                
+                // Ensure playback state
+                if (isPaused) {
+                    isPaused = false;
+                    pausePlayButton.textContent = '⏸';
+                }
+                startCountdown(); // Auto-start countdown after image switch
+            }
+            updateNavigationButtons(); 
+        }
+
+        // Navigation button event listeners
+        prevImageButton.addEventListener('click', showPreviousImage);
+        nextImageButton.addEventListener('click', showNextImage);
+
+        /**
+         * Toggles pause/play for the countdown.
+         */
+        pausePlayButton.addEventListener('click', () => {
+            if (isPaused) {
+                // Currently paused, click to play
+                isPaused = false;
+                pausePlayButton.textContent = '⏸'; // Switch to Pause icon
+                startCountdown(); // Resume from current remainingTime
+            } else {
+                // Currently playing, click to pause
+                isPaused = true;
+                pausePlayButton.textContent = '▶'; // Switch to Play icon
+                clearInterval(countdownTimer);
+            }
+            updateNavigationButtons(); 
+        });
+
+        /**
+         * Starts the countdown.
+         * This function now always uses the current 'remainingTime'.
+         * 'remainingTime' is reset to 'displayTime' only when a new image is loaded (in showNextImage/showPreviousImage).
+         */
+        function startCountdown() {
+            clearInterval(countdownTimer); 
+            if (isPaused) { // If paused, do not start the interval
+                return;
+            }
+
+            // remainingTime is already set by showNextImage or showPreviousImage, or it's the value from before pausing.
+            updateCountdownDisplay(); // Update display immediately when starting/resuming
+
+            countdownTimer = setInterval(() => {
+                remainingTime--;
+                updateCountdownDisplay();
+
+                if (remainingTime <= 0) {
+                    clearInterval(countdownTimer); 
+                    showNextImage(); 
+                }
+            }, 1000); 
+        }
+
+        /**
+         * Updates the countdown display text.
+         */
+        function updateCountdownDisplay() {
+            if (currentTimeFormat === 'minutes:seconds') {
+                const minutes = Math.floor(remainingTime / 60);
+                const seconds = remainingTime % 60;
+                countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else { // 'seconds'
+                countdownElement.textContent = `${remainingTime}s`;
+            }
+        }
+
+        /**
+         * Applies currently set image effects.
+         */
+        function applyImageEffects() {
+            currentImage.classList.remove('mirror-effect', 'grayscale-effect');
+            if (isMirrorEnabled) currentImage.classList.add('mirror-effect');
+            if (isGrayscaleEnabled) currentImage.classList.add('grayscale-effect');
+            currentImage.onload = () => {
+                if (isGridEnabled) {
+                    drawGrid();
+                }
+            };
+        }
+
+        /**
+         * Updates the enabled/disabled state of navigation buttons.
+         */
+        function updateNavigationButtons() {
+            prevImageButton.disabled = (historyPointer <= 0);
+            nextImageButton.disabled = (historyPointer === displayedImageHistory.length - 1 && imageUrls.length === 0);
+            pausePlayButton.disabled = (imageUrls.length === 0 || !isPlaying);
+        }
+
+        /**
+         * Draws the grid on the canvas.
+         * The grid adapts to the actual display size of the current image.
+         */
+        function drawGrid() {
+            const imageRect = currentImage.getBoundingClientRect();
+            
+            gridCanvas.width = imageRect.width;
+            gridCanvas.height = imageRect.height;
+
+            ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); 
+
+            if (!isGridEnabled) return; 
+
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x < gridCanvas.width; x += currentGridSize) { 
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, gridCanvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < gridCanvas.height; y += currentGridSize) { 
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(gridCanvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        /**
+         * Stops the current sketch session and returns to the main menu.
+         */
+        function stopGame() {
+            clearInterval(countdownTimer); 
+            isPlaying = false;
+            isPaused = false; // Reset pause state when returning to menu
+            pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
+
+            imageDisplayArea.classList.add('hidden'); 
+            controlsMenu.classList.remove('hidden'); 
+            currentImage.src = ''; 
+            console.log('Sketch session stopped.');
+
+            // Restore main menu background
+            applyBackground(currentMainMenuBackgroundPath, false);
+            updateNavigationButtons(); 
+        }
+
+        backToMenuButton.addEventListener('click', stopGame);
+
+        /**
+         * Displays a custom alert box, replacing the native alert.
+         * @param {string} message - Message to display.
+         * @param {string} [title="Tip"] - Title of the alert box.
+         */
+        function showCustomAlert(message, title = "Tip") {
+            const alertBox = document.createElement('div');
+            alertBox.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(40, 44, 52, 0.9);
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                border-radius: 12px;
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                padding: 25px;
+                z-index: 1000;
+                color: #e0e0e0;
+                text-align: center;
+                max-width: 400px; 
+                width: 90%;
+            `;
+            alertBox.innerHTML = `
+                <h3 style="margin-bottom: 15px; font-size: 1.3em;">${title}</h3>
+                <p style="margin-bottom: 20px; font-size: 1em; line-height: 1.5;">${message}</p>
+                <button id="alertCloseButton" style="
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 8px;
+                    background: linear-gradient(135deg, #0f3460, #16213e);
+                    color: #e0e0e0;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: background 0.3s ease;
+                ">确定</button>
+            `;
+            document.body.appendChild(alertBox);
+
+            document.getElementById('alertCloseButton').addEventListener('click', () => {
+                document.body.removeChild(alertBox);
+            });
+        }
+    </script>
+</body>
+</html>
