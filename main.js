@@ -16,11 +16,49 @@ const store = new Store({
         gridColor: '#FFFFFF', // 默认网格颜色
         gridSize: 50, // 默认网格大小
         timeFormat: 'minutes:seconds', // 默认时间格式
-        isRandomPlayback: true // 默认随机播放模式, 会在渲染进程加载并保存
+        isRandomPlayback: true, // 默认随机播放
+        isAlwaysOnTop: false, // 默认不置顶
+        imageMarks: {} // 用于存储图片标记的数据结构
     }
 });
 
 let mainWindow;
+
+// 定义速写日志文件的路径
+const SKETCH_LOG_FILE = path.join(app.getPath('userData'), 'sketch_log.txt');
+
+/**
+ * 将消息写入独立的速写日志文件。
+ * @param {string} message - 要写入日志的消息。
+ * @param {string} [imagePath=''] - 可选的图片完整路径，用于日志记录。
+ */
+function writeToSketchLog(message, imagePath = '') {
+    const timestamp = new Date().toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false // 24小时制
+    });
+    // 格式化日期部分为 "YYYY年MM月DD日"
+    const formattedDate = timestamp.split(' ')[0].replace(/\//g, '年').replace(/-/g, '月') + '日';
+    const timePart = timestamp.split(' ')[1];
+    let logEntry = `${formattedDate} ${timePart} - ${message}`;
+
+    if (imagePath) {
+        logEntry += ` (路径：${imagePath})`;
+    }
+    logEntry += `\n`;
+
+    fs.appendFile(SKETCH_LOG_FILE, logEntry, (err) => {
+        if (err) {
+            console.error('Failed to write to sketch log file:', err);
+        }
+    });
+}
+
 
 function createWindow() {
     // 从存储中加载上次的窗口边界
@@ -33,128 +71,160 @@ function createWindow() {
         y: savedBounds.y, // 使用上次保存的 Y 坐标
         minWidth: 600, // 最小宽度
         minHeight: 400, // 最小高度
-        frame: true, // 是否显示默认的窗口边框和控制按钮 (最大化/最小化/关闭)
-        transparent: false, // 是否透明 (如果需要无边框透明窗口，可以设置为true，但需要自定义标题栏)
+        frame: false, // 隐藏原生标题栏，实现无边框窗口
+        transparent: true, // 使窗口背景透明，以便 CSS 背景生效
+        titleBarStyle: 'hidden', // macOS 上的隐藏标题栏样式
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'), // 预加载脚本路径
-            nodeIntegration: false, // 禁用 Node.js 集成，提高安全性
-            contextIsolation: true, // 启用上下文隔离，提高安全性
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false // 保持 false 以增强安全性
         }
     });
 
-    // 当窗口即将关闭时，保存当前窗口的大小和位置
-    mainWindow.on('close', () => {
-        if (mainWindow) {
-            const currentBounds = mainWindow.getBounds();
-            store.set('windowBounds', currentBounds);
-        }
+    // 监听窗口移动和大小变化，并保存
+    mainWindow.on('resize', () => {
+        store.set('windowBounds', mainWindow.getBounds());
+    });
+    mainWindow.on('move', () => {
+        store.set('windowBounds', mainWindow.getBounds());
     });
 
-    // 加载您的 index.html 文件
-    // 请确保 index.html 和 main.js 在同一目录下，或者调整路径
+    // 加载 index.html
     mainWindow.loadFile('index.html');
 
-    // 打开开发者工具 (可选，在生产环境中通常会禁用)
-    // mainWindow.webContents.openDevTools();
-}
-
-// 当 Electron 应用准备就绪时创建窗口
-app.whenReady().then(() => {
-    createWindow();
-
-    app.on('activate', () => {
-        // 在 macOS 上，当 dock 图标被点击但没有其他窗口打开时，
-        // 通常会在应用程序中重新创建一个窗口。
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
+    // 监听 'ready-to-show' 事件，在窗口准备好显示时应用置顶设置
+    mainWindow.once('ready-to-show', () => {
+        const initialAlwaysOnTop = store.get('isAlwaysOnTop');
+        if (initialAlwaysOnTop !== undefined) {
+            // 设置窗口置顶状态，并为 macOS 确保在全屏模式下也可见
+            mainWindow.setAlwaysOnTop(initialAlwaysOnTop, { visibleOnFullScreen: true });
+            // 将实际的置顶状态发送回渲染进程，以同步 UI 按钮状态
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('always-on-top-status', initialAlwaysOnTop);
+            }
         }
     });
-});
 
-// 当所有窗口都被关闭时退出应用 (macOS 除外)
+    // 可选：打开开发者工具
+    // mainWindow.webContents.openDevTools();
+
+    // 监听窗口关闭事件
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+}
+
+// Electron 应用准备就绪时创建窗口
+app.whenReady().then(createWindow);
+
+// 当所有窗口都关闭时退出应用 (macOS 除外)
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') { // 'darwin' 是 macOS 平台的标识符
+    if (process.platform !== 'darwin') {
         app.quit();
     }
 });
 
+// 应用激活时 (例如点击 dock 图标) 重新创建窗口 (macOS)
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
+});
+
 /**
- * IPC 通道：处理渲染进程发送的“置顶”请求
- * @param {Event} event - IPC 事件对象
- * @param {boolean} alwaysOnTop - 是否置顶
+ * IPC 通道：设置窗口置顶状态。
+ * @param {Event} event - IPC 事件对象。
+ * @param {boolean} alwaysOnTop - 是否置顶。
  */
 ipcMain.on('set-always-on-top', (event, alwaysOnTop) => {
     if (mainWindow) {
-        mainWindow.setAlwaysOnTop(alwaysOnTop);
-        // 可以选择向渲染进程发送确认消息，更新按钮状态
-        event.reply('always-on-top-status', alwaysOnTop);
+        // 更新置顶状态，并为 macOS 确保在全屏模式下也可见
+        mainWindow.setAlwaysOnTop(alwaysOnTop, { visibleOnFullScreen: true });
+        // 回复置顶状态给渲染进程，以便同步 UI 按钮
+        event.sender.send('always-on-top-status', alwaysOnTop);
     }
 });
 
 /**
- * IPC 通道：保存设置到 electron-store
+ * IPC 通道：在 Finder 中打开文件并选中
  * @param {Event} event - IPC 事件对象
- * @param {string} key - 设置的键名
- * @param {any} value - 设置的值
+ * @param {string} filePath - 要打开的文件路径
  */
-ipcMain.handle('save-setting', (event, key, value) => {
-    store.set(key, value);
+ipcMain.handle('open-file-in-finder', (event, filePath) => {
+    try {
+        shell.showItemInFolder(filePath);
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to open file in finder:', error);
+        return { success: false, message: error.message };
+    }
 });
 
 /**
- * IPC 通道：从 electron-store 加载设置
- * @param {Event} event - IPC 事件对象
- * @param {string} key - 设置的键名
- * @returns {any} - 设置的值
+ * IPC 通道：在系统默认应用程序中打开文件。
+ * @param {Event} event - IPC 事件对象。
+ * @param {string} filePath - 要打开的文件路径。
  */
-ipcMain.handle('load-setting', (event, key) => {
-    return store.get(key);
+ipcMain.handle('open-file-in-default-app', async (event, filePath) => {
+    try {
+        const result = await shell.openPath(filePath);
+        if (result.startsWith('Error')) {
+            return { success: false, message: result };
+        }
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to open file in default app:', error);
+        return { success: false, message: error.message };
+    }
 });
 
+
 /**
- * IPC 通道：打开文件选择对话框，用于选择背景图片
- * @returns {Promise<string|null>} - 选择的图片路径，如果取消则为 null
+ * IPC 通道：打开文件选择对话框
+ * @returns {Promise<string|null>} - 选择的图片路径
  */
 ipcMain.handle('open-file-dialog', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openFile'], // 允许选择文件
-        filters: [
-            { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'] } // 仅允许图片类型
-        ]
+        properties: ['openFile'],
+        filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'] }]
     });
     if (canceled) {
-        return null; // 用户取消选择
+        return null;
+    } else {
+        return filePaths[0];
     }
-    return filePaths[0]; // 返回选择的第一个文件路径
 });
 
 /**
- * IPC 通道：打开文件夹选择对话框，用于选择默认图片文件夹
- * @returns {Promise<string|null>} - 选择的文件夹路径，如果取消则为 null
+ * IPC 通道：打开文件夹选择对话框。
+ * @param {Event} event - IPC 事件对象。
+ * @param {string} [currentPath] - 文件夹选择对话框的默认打开路径。
+ * @returns {Promise<string|null>} - 选择的文件夹路径。
  */
-ipcMain.handle('open-folder-dialog', async (event, currentPath = undefined) => {
+ipcMain.handle('open-folder-dialog', async (event, currentPath) => {
+    const defaultPath = currentPath || app.getPath('pictures'); // 如果没有提供当前路径，默认为用户图片文件夹
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openDirectory'], // 允许选择文件夹
-        defaultPath: currentPath // 默认为当前路径，提升用户体验
+        properties: ['openDirectory'],
+        defaultPath: defaultPath
     });
     if (canceled) {
-        return null; // 用户取消选择
+        return null;
+    } else {
+        return filePaths[0];
     }
-    return filePaths[0]; // 返回选择的第一个文件夹路径
 });
 
 /**
- * IPC 通道：读取指定文件夹内的文件和子文件夹
- * @param {Event} event - IPC 事件对象
- * @param {string} folderPath - 要读取的文件夹路径
- * @returns {Promise<Array<{name: string, path: string, type: 'file'|'directory'}>>} - 文件和文件夹信息数组
+ * IPC 通道：读取指定文件夹内的图片文件和子文件夹。
+ * @param {Event} event - IPC 事件对象。
+ * @param {string} folderPath - 要读取的文件夹路径。
+ * @returns {Promise<Array<Object>>} - 包含文件和文件夹信息的数组。
  */
 ipcMain.handle('read-folder-images', async (event, folderPath) => {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.svg'];
+    const results = [];
     try {
         const items = await fs.promises.readdir(folderPath);
-        const results = [];
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff']; // 常见图片扩展名
-
         for (const item of items) {
             const itemPath = path.join(folderPath, item);
             let stats;
@@ -194,37 +264,125 @@ ipcMain.handle('read-folder-images', async (event, folderPath) => {
 
 
 /**
- * IPC 通道：在 Finder 中打开文件并选中
- * @param {Event} event - IPC 事件对象
- * @param {string} filePath - 要打开的文件路径
+ * IPC 通道：保存设置。
+ * @param {Event} event - IPC 事件对象。
+ * @param {string} key - 设置的键名。
+ * @param {any} value - 设置的值。
  */
-ipcMain.handle('open-file-in-finder', (event, filePath) => {
-    shell.showItemInFolder(filePath);
-});
-// main.js - ... (keep existing code above this line)
-
-/**
- * IPC channel: Open file with system's default application
- * @param {Event} event - IPC event object
- * @param {string} filePath - The path of the file to open
- */
-ipcMain.handle('open-file-in-default-app', async (event, filePath) => {
+ipcMain.handle('save-setting', (event, key, value) => {
     try {
-        const result = await shell.openPath(filePath);
-        if (result.cancelled) {
-            console.log('File opening was cancelled.');
-            return { success: false, message: '操作已取消。' };
-        } else if (result.error) {
-            console.error(`Failed to open ${filePath}: ${result.error}`);
-            return { success: false, message: `无法打开文件：${result.error}` };
-        } else {
-            console.log(`Successfully opened ${filePath}`);
-            return { success: true };
-        }
+        store.set(key, value);
+        return { success: true };
     } catch (error) {
-        console.error(`Error opening file ${filePath}:`, error);
-        return { success: false, message: `打开文件时出错：${error.message}` };
+        console.error(`Failed to save setting ${key}:`, error);
+        return { success: false, message: error.message };
     }
 });
 
-// main.js - ... (keep existing code below this line, e.g., createWindow())
+/**
+ * IPC 通道：加载设置。
+ * @param {Event} event - IPC 事件对象。
+ * @param {string} key - 设置的键名。
+ * @returns {Promise<any>} - 设置的值。
+ */
+ipcMain.handle('load-setting', (event, key) => {
+    try {
+        return store.get(key);
+    }
+    catch (error) {
+        console.error(`Failed to load setting ${key}:`, error);
+        return null;
+    }
+});
+
+/**
+ * IPC 通道：保存图片标记。
+ * 同时会将标记事件写入独立的速写日志文件。
+ * @param {Event} event - IPC 事件对象。
+ * @param {string} filePath - 图片的原始文件路径。
+ * @param {number} duration - 标记时的速写时长（秒）。
+ * @returns {Promise<Object>} - 成功或失败状态。
+ */
+ipcMain.handle('save-image-mark', async (event, filePath, duration) => {
+    try {
+        const marks = store.get('imageMarks') || {};
+        if (!marks[filePath]) {
+            marks[filePath] = [];
+        }
+        marks[filePath].push({ duration: duration, timestamp: Date.now() });
+        store.set('imageMarks', marks);
+
+        // 写入速写日志
+        const fileName = path.basename(filePath);
+        const durationText = duration === 0 ? '无限制' : `${duration}秒`;
+        // 现在传递 filePath 参数给 writeToSketchLog
+        writeToSketchLog(`标记图片：${fileName} (用时：${durationText})`, filePath);
+
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to save image mark:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+/**
+ * IPC 通道：获取所有图片标记。
+ * @param {Event} event - IPC 事件对象。
+ * @returns {Promise<Object>} - 包含所有图片标记的对象。
+ */
+ipcMain.handle('get-image-marks', async () => {
+    try {
+        return store.get('imageMarks') || {};
+    } catch (error) {
+        console.error('Failed to get image marks:', error);
+        return {};
+    }
+});
+
+/**
+ * IPC 通道：清除指定路径的图片标记。
+ * 同时会将取消标记事件写入独立的速写日志文件。
+ * @param {Event} event - IPC 事件对象。
+ * @param {string} filePath - 图片的原始文件路径。
+ * @returns {Promise<Object>} - 成功或失败状态。
+ */
+ipcMain.handle('clear-image-marks-for-path', async (event, filePath) => {
+    try {
+        const marks = store.get('imageMarks') || {};
+        const fileName = path.basename(filePath); // 获取文件名用于日志记录
+        
+        if (marks[filePath]) { // 只有当存在标记时才记录取消标记并删除
+            delete marks[filePath]; // 删除该路径对应的所有标记
+            store.set('imageMarks', marks);
+            // 写入速写日志
+            // 现在传递 filePath 参数给 writeToSketchLog
+            writeToSketchLog(`取消标记图片：${fileName}`, filePath);
+        } else {
+            console.log(`No marks found for ${fileName} to clear.`);
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to clear image marks for path:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+/**
+ * IPC 通道：打开速写日志文件（现在是独立的 `sketch_log.txt`）。
+ * @param {Event} event - IPC 事件对象。
+ * @returns {Promise<Object>} - 成功或失败状态。
+ */
+ipcMain.handle('open-sketch-log', async (event) => {
+    try {
+        // 确保日志文件存在，如果不存在则创建
+        if (!fs.existsSync(SKETCH_LOG_FILE)) {
+            fs.writeFileSync(SKETCH_LOG_FILE, '速写日志文件已创建。\n');
+        }
+        shell.openPath(SKETCH_LOG_FILE); // 打开新的独立日志文件
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to open sketch log file:', error);
+        return { success: false, message: error.message };
+    }
+});

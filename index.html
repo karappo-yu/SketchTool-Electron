@@ -30,6 +30,10 @@
             --alert-bg: rgba(40, 44, 52, 0.9);
             --alert-border: 1px solid rgba(255, 255, 255, 0.18);
             --alert-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --mark-info-bg: rgba(0, 0, 0, 0.7);
+            --mark-info-text-color: #ffffff; /* Explicitly white for dark theme */
+            --delete-mark-color: #dc3545;
+            --folder-completed-bg: #28a745; /* Green for completed folders */
         }
 
         body.light-theme {
@@ -56,6 +60,10 @@
             --alert-bg: rgba(255, 255, 255, 0.95);
             --alert-border: 1px solid rgba(0, 0, 0, 0.1);
             --alert-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            --mark-info-bg: rgba(0, 0, 0, 0.7); /* Darker background for contrast in light theme */
+            --mark-info-text-color: #ffffff; /* Explicitly white for light theme */
+            --delete-mark-color: #dc3545;
+            --folder-completed-bg: #28a745; /* Green for completed folders */
         }
 
         /* CSS Reset 和全局样式 */
@@ -79,6 +87,9 @@
             color: var(--text-color);
             overflow: hidden;
             transition: background 0.8s ease, color 0.8s ease;
+
+            /* Electron 拖动区域：将整个 body 设置为可拖动 */
+            -webkit-app-region: drag;
         }
 
         /* 玻璃拟态效果基础样式 */
@@ -90,6 +101,9 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Shadow is intentionally not themed directly by variable for consistency */
             padding: 20px;
             margin: 10px;
+            
+            /* 玻璃拟态元素本身不能拖动，确保内部可拖动区域正常工作 */
+            -webkit-app-region: no-drag;
         }
 
         /* The rest of the CSS using variables */
@@ -101,6 +115,9 @@
             justify-content: center;
             align-items: center;
             position: relative;
+            
+            /* app-container 作为主内容区域，也应设为可拖动 */
+            -webkit-app-region: drag;
         }
 
         #controls-menu {
@@ -171,12 +188,25 @@
             text-overflow: ellipsis;
             min-width: 0; /* Allow text to shrink if necessary */
         }
+        .folder-browser-header-buttons {
+            display: flex;
+            gap: 8px; /* Gap between buttons */
+        }
 
-        .folder-browser-header #goUpFolderButton {
+        .folder-browser-header #goUpFolderButton,
+        .folder-browser-header #libraryFilterMarkedToggle {
             margin: 0; /* Remove default margins */
             padding: 8px 15px; /* Adjust button padding */
             font-size: 0.9em;
             flex-shrink: 0; /* Prevent shrinking */
+            border-radius: 8px; /* Ensure consistent border-radius for buttons */
+        }
+        /* New: Styles for library filter button icon */
+        .folder-browser-header #libraryFilterMarkedToggle .mark-icon {
+            font-size: 1.8em; /* Match markStarButton size */
+            line-height: 1;
+            display: block;
+            /* Color and background are handled by .toggle and .active classes */
         }
 
 
@@ -215,6 +245,7 @@
             height: 160px;
             text-decoration: none;
             color: inherit;
+            position: relative; /* For positioning mark info */
         }
 
         .thumbnail-item:hover {
@@ -251,6 +282,63 @@
             line-height: 1.2;
         }
 
+        /* New: Styles for mark information on thumbnail */
+        .thumbnail-mark-info {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: var(--mark-info-bg);
+            color: var(--mark-info-text-color); /* Use the new variable for consistent white text */
+            font-size: 0.75em;
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+            pointer-events: auto; /* Allow interaction */
+            z-index: 1;
+        }
+
+        .delete-mark-button {
+            background: none;
+            border: none;
+            color: var(--delete-mark-color);
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0 2px;
+            line-height: 1;
+            font-weight: bold;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .delete-mark-button:hover {
+            color: #ff6b6b; /* Lighter red on hover */
+            transform: scale(1.2);
+        }
+        body.light-theme .delete-mark-button {
+            color: #dc3545; /* Darker red for light theme */
+        }
+        body.light-theme .delete-mark-button:hover {
+            color: #ff6b6b;
+        }
+
+        /* New: Folder completed mark style */
+        .thumbnail-folder-completed-info {
+            position: absolute;
+            top: 5px;
+            right: 5px; /* Position on the right for folders */
+            background: var(--folder-completed-bg); /* Use green color */
+            color: #ffffff; /* White text for contrast */
+            font-size: 0.75em;
+            padding: 3px 6px;
+            border-radius: 4px;
+            user-select: none;
+            pointer-events: none; /* Make it non-interactive */
+            z-index: 1;
+            font-weight: bold;
+        }
+
+
         .input-group {
             display: flex;
             flex-direction: column;
@@ -276,6 +364,8 @@
             overflow: hidden;
             text-overflow: ellipsis;
             transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
         .custom-input-like-button:hover {
             border-color: var(--button-primary-start); /* Using primary button start color for hover border */
@@ -293,6 +383,8 @@
             font-size: 1em;
             outline: none;
             transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+            /* 防止输入框成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
 
         input[type="number"]:focus,
@@ -319,6 +411,9 @@
             color: var(--text-color);
             font-weight: bold;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative; /* Needed for tooltips */
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
 
         button.primary {
@@ -346,24 +441,92 @@
             background: var(--button-toggle-hover-bg);
         }
 
-        button.toggle.disabled-preset {
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.4);
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        body.light-theme button.toggle.disabled-preset {
-            background: rgba(0, 0, 0, 0.02);
-            color: rgba(0, 0, 0, 0.4);
-        }
-
-
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: translateY(0);
             box-shadow: none;
         }
+
+        /* Tooltip base styles for all buttons that use data-tooltip */
+        button[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+            z-index: 100;
+        }
+        button[data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+        button[data-tooltip]::before { /* Tooltip arrow */
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid rgba(0, 0, 0, 0.7); /* Pointing up */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+            z-index: 100;
+        }
+        button[data-tooltip]:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Positioning for main menu top-right buttons tooltips */
+        #top-right-menu-buttons button[data-tooltip]::after {
+            top: 100%; /* Position below the button */
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 10px; /* Space from the button */
+        }
+        #top-right-menu-buttons button[data-tooltip]::before {
+            top: 100%; /* Position below the button */
+            left: 50%;
+            transform: translateX(-50%) translateY(-8px); /* Adjust for arrow position */
+        }
+        /* Positioning for overlay buttons tooltips */
+        #overlay-controls button[data-tooltip]::after {
+            top: 100%; /* Position below the button */
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 10px; /* Space from the button */
+        }
+        #overlay-controls button[data-tooltip]::before {
+            top: 100%; /* Position below the button */
+            left: 50%;
+            transform: translateX(-50%) translateY(-8px); /* Adjust for arrow position */
+        }
+
+        /* Positioning for startButton tooltip */
+        #startButton[data-tooltip]::after {
+            bottom: 100%; /* Position above the button */
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 10px; /* Space from the button */
+        }
+        #startButton[data-tooltip]::before {
+            bottom: 100%; /* Position above the button */
+            left: 50%;
+            transform: translateX(-50%) translateY(8px); /* Adjust for arrow position */
+            border-top: 6px solid rgba(0, 0, 0, 0.7); /* Pointing down */
+            border-bottom: none; /* No bottom border */
+        }
+
 
         #image-display-area {
             position: absolute;
@@ -389,7 +552,6 @@
             transition: filter 0.5s ease, transform 0.5s ease;
             user-select: none;
             pointer-events: none;
-            /* Removed flex-shrink: 0; */
         }
 
 
@@ -452,6 +614,8 @@
             height: 100%;
             z-index: 14;
             pointer-events: auto;
+            /* CRITICAL FIX: Ensure hover zone is not draggable itself */
+            -webkit-app-region: no-drag; 
         }
         #right-controls-hover-zone:hover #overlay-controls {
             opacity: 1;
@@ -459,22 +623,23 @@
         }
 
         #overlay-controls button {
-            padding: 10px 15px;
-            font-size: 0.9em;
+            padding: 0; /* Changed to 0 as buttons contain icons now */
+            font-size: 1.2em; /* Base font size for icons */
             background: var(--button-toggle-bg); /* Themed */
             color: var(--text-color); /* Themed */
             border: 1px solid var(--glass-border-color); /* Themed */
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            width: auto;
-            min-width: 40px;
-            height: 40px;
+            width: 40px; /* Fixed width for icon buttons */
+            height: 40px; /* Fixed height for icon buttons */
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             white-space: nowrap;
             position: relative;
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
 
         #overlay-controls button.primary {
@@ -497,42 +662,18 @@
             background: var(--button-toggle-hover-bg); /* Themed */
         }
 
-        /* Icon-only buttons */
-        #overlay-controls button.icon-only {
-            padding: 0;
-            font-size: 1.2em;
-            width: 40px;
-            height: 40px;
-            overflow: hidden;
-        }
-        #overlay-controls button.icon-only svg {
-            width: 28px; /* Slightly larger icons */
+        /* Icons inside buttons */
+        #overlay-controls button svg,
+        #overlay-controls button .mark-icon { /* Apply to both SVG and Unicode icons */
+            fill: currentColor;
+            width: 28px; /* Consistent size for icons */
             height: 28px;
-        }
-        #overlay-controls button.icon-only::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            margin-bottom: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 5px 8px;
-            border-radius: 5px;
-            font-size: 0.8em;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
-            pointer-events: none;
-        }
-        #overlay-controls button.icon-only:hover::after {
-            opacity: 1;
-            visibility: visible;
+            display: block; /* Ensure correct rendering for unicode chars */
+            line-height: 1; /* For vertical centering of unicode chars */
         }
 
-        /* Image bottom navigation buttons */
+
+        /* Image bottom navigation controls */
         #image-navigation-controls {
             position: absolute;
             bottom: 20px;
@@ -551,13 +692,17 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 80px;
+            height: 80px; /* Increased height for easier hover activation */
             z-index: 14;
             pointer-events: auto;
+            /* CRITICAL FIX: Ensure hover zone is not draggable itself */
+            -webkit-app-region: no-drag;
         }
+        /* When hovering over the bottom zone, show navigation controls */
         #bottom-controls-hover-zone:hover #image-navigation-controls {
             opacity: 1;
             visibility: visible;
+            transition-delay: 0s; /* No delay when showing */
         }
 
         #image-navigation-controls button {
@@ -574,6 +719,8 @@
             transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
             text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
             font-weight: bold;
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
 
         #image-navigation-controls button:hover {
@@ -583,8 +730,7 @@
         }
 
         #image-navigation-controls button:disabled {
-            background: rgba(255, 255, 255, 0.1); /* Keep low contrast for disabled */
-            color: rgba(255, 255, 255, 0.25);
+            opacity: 0.5;
             cursor: not-allowed;
             transform: translateY(0) scale(1);
             box-shadow: none;
@@ -605,41 +751,50 @@
             z-index: 10;
         }
 
+        /* Styling for settings, random playback, filter marked buttons (circular icons) */
         #settings-button,
-        #random-playback-toggle {
+        #random-playback-toggle,
+        #filter-marked-toggle {
             background: var(--button-toggle-bg); /* Themed */
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5em;
+            width: 36px; /* Optimized fixed size */
+            height: 36px; /* Optimized fixed size */
+            font-size: 1.5em; /* Base font size for icons - for any unicode fallback */
             color: var(--text-color); /* Themed */
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
+            /* Ensure centering of contents */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
         #settings-button:hover,
-        #random-playback-toggle:hover {
+        #random-playback-toggle:hover,
+        #filter-marked-toggle:hover {
             background: var(--button-toggle-hover-bg); /* Themed */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         #settings-button svg,
-        #random-playback-toggle svg {
+        #random-playback-toggle svg,
+        #filter-marked-toggle svg {
             fill: currentColor;
-            width: 28px; /* Larger icons */
-            height: 28px;
+            width: 24px; /* Optimized fixed size for icons */
+            height: 24px; /* Optimized fixed size for icons */
         }
 
-        /* Random playback toggle active state */
-        #random-playback-toggle.active {
+        /* Random playback toggle and filter marked toggle active state */
+        #random-playback-toggle.active,
+        #filter-marked-toggle.active {
             background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end)); /* Themed */
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
         }
         #settings-button:hover {
             transform: rotate(15deg); 
         }
+
 
         /* Settings modal overlay */
         #settings-modal-overlay {
@@ -657,6 +812,9 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
+
+            /* overlay 设为可拖动 */
+            -webkit-app-region: drag;
         }
 
         #settings-modal-overlay.active {
@@ -665,18 +823,21 @@
         }
 
         #settings-modal-content {
-            width: 450px;
-            max-width: 90%;
+            width: 680px; /* Further increased width to accommodate inline elements more comfortably */
+            max-width: 95%; /* Adjusted max-width for very small screens */
             padding: 30px;
             position: relative;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
+
+            /* 模态框内容本身不可拖动，以便内部元素可拖动 */
+            -webkit-app-region: no-drag;
         }
 
         #settings-modal-content h2 {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px; /* Reduced margin */
             color: var(--text-color); /* Themed */
             font-size: 1.8em;
         }
@@ -686,15 +847,15 @@
             position: absolute;
             top: 10px; /* Slightly closer to edge */
             left: 10px; /* Slightly closer to edge */
-            background: none; /* No background by default */
+            background-color: #dc3545; /* Red background for the button */
             border: none;
             font-size: 1.2em; /* Smaller font size for X */
-            color: #dc3545; /* Red color */
+            color: #ffffff; /* White X by default */
             cursor: pointer;
-            transition: color 0.2s ease, background 0.2s ease, opacity 0.3s ease; /* Add opacity to transition */
+            transition: background-color 0.2s ease, color 0.2s ease, opacity 0.3s ease; /* Add opacity to transition */
             padding: 0; /* Remove padding to make it truly circular/small */
-            width: 25px; /* Smaller width */
-            height: 25px; /* Smaller height */
+            width: 20px; /* Smaller width */
+            height: 20px; /* Smaller height */
             border-radius: 50%; /* Make it circular */
             display: flex; /* Use flex to center the X inside */
             justify-content: center;
@@ -702,6 +863,8 @@
             opacity: 0; /* Hidden by default */
             pointer-events: none; /* Make it non-interactive when hidden */
             z-index: 1; /* Ensure it's above other elements if needed */
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
         #settings-modal-content:hover .close-button {
             opacity: 1; /* Show on parent hover */
@@ -709,10 +872,10 @@
         }
         #settings-modal-content .close-button:hover {
             color: #000000; /* Black color on button hover */
-            background: rgba(255, 255, 255, 0.2); /* Light background on hover for contrast */
+            background-color: rgba(255, 255, 255, 0.8); /* Light background on hover for contrast */
         }
         body.light-theme #settings-modal-content .close-button:hover {
-            background: rgba(0, 0, 0, 0.1); /* Darker background on hover for light theme */
+            background-color: rgba(0, 0, 0, 0.3); /* Darker background on hover for light theme */
         }
 
 
@@ -733,6 +896,8 @@
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, color 0.3s ease;
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
         #settings-modal-theme-toggle:hover {
             background: var(--button-toggle-hover-bg); /* Themed */
@@ -749,74 +914,171 @@
             box-shadow: 0 2px 8px rgba(135, 206, 235, 0.4);
         }
 
-        /* Color picker input */
-        #gridColorPicker {
+        /* Settings section title - removed as per request for 5 lines of settings */
+        /*
+        .settings-section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--glass-border-color);
+            text-align: center;
+            margin-top: 15px;
+        }
+        */
+
+        /* New: Compact settings row for 5-line structure */
+        .settings-row-compact {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Slightly reduced gap */
             width: 100%;
-            height: 40px;
-            padding: 5px;
-            border: 1px solid var(--input-border); /* Themed */
-            border-radius: 8px;
-            background: var(--input-bg); /* Themed */
-            cursor: pointer;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+            flex-wrap: nowrap !important; /* CRITICAL: Force items into a single line, override media queries */
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Subtle separator */
         }
-        #gridColorPicker::-webkit-color-swatch-wrapper {
-            padding: 0;
+        .settings-row-compact:last-of-type {
+            border-bottom: none; /* No border for the last row */
         }
-        #gridColorPicker::-webkit-color-swatch {
-            border: none;
-            border-radius: 6px;
+        .settings-row-compact label {
+            flex-shrink: 0; /* Prevent label from shrinking */
+            font-size: 0.9em;
+            color: var(--info-text-color);
+            min-width: 80px; /* Increased min-width for labels to accommodate "默认路径" etc. */
+            text-align: right; /* Align labels right for better alignment with controls */
+            white-space: nowrap; /* Prevent label text from wrapping */
         }
 
-        /* Radio button group */
-        .radio-group {
+        /* Groups of controls within a row (e.g., for background settings) */
+        .settings-row-compact .control-group {
             display: flex;
-            gap: 15px;
-            margin-top: 5px;
-            justify-content: center;
+            align-items: center;
+            gap: 5px; /* Very small gap within control groups */
+            flex-shrink: 0; /* Prevent individual control groups from shrinking too much */
         }
-        .radio-group label {
+        .settings-row-compact .control-group.background-controls {
+            flex-grow: 1; /* Allow background control groups to grow */
+            min-width: 220px; /* Ensure enough space for buttons */
+        }
+        .settings-row-compact .control-group .sub-label {
+            font-size: 0.85em;
+            color: var(--info-text-color);
+            flex-shrink: 0;
+            white-space: nowrap; /* Prevent sub-label text from wrapping */
+        }
+
+        /* Compact buttons for settings modal */
+        .settings-row-compact .compact-btn {
+            padding: 5px 9px; /* Even smaller padding for very tight fit */
+            font-size: 0.75em; /* Even smaller font size */
+            box-shadow: none;
+            flex-shrink: 0; /* Important: prevent buttons from shrinking */
+            /* 防止按钮成为拖动区域 */
+            -webkit-app-region: no-drag;
+        }
+
+        /* For the default path input, allow it to grow */
+        .settings-row-compact .flex-grow-input-display {
+            flex-grow: 1; /* Allow it to take up remaining space */
+            min-width: 100px; /* A bit more minimum width */
+            padding: 6px 10px;
+            font-size: 0.85em;
+            white-space: nowrap; /* Keep content on one line */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Show ellipsis for overflow */
+            /* 防止输入框成为拖动区域 */
+            -webkit-app-region: no-drag;
+        }
+        
+        /* Compact color picker and number input */
+        .settings-row-compact .color-picker-compact {
+            width: 35px; /* Slightly smaller fixed width */
+            height: 28px; /* Slightly smaller height */
+            padding: 2px;
+            flex-shrink: 0;
+            cursor: pointer;
+            /* 防止颜色选择器成为拖动区域 */
+            -webkit-app-region: no-drag;
+        }
+        .settings-row-compact .number-input-compact {
+            width: 60px; /* Fixed width for number input */
+            padding: 5px 6px; /* Smaller padding */
+            font-size: 0.85em;
+            text-align: center;
+            flex-shrink: 0; /* Prevent shrinking */
+            /* 防止输入框成为拖动区域 */
+            -webkit-app-region: no-drag;
+        }
+
+
+        /* Radio button group for time format */
+        .radio-group-inline {
+            display: flex;
+            gap: 10px; /* Reduced gap between radio options */
+            flex-grow: 1; /* Allows it to take up remaining space */
+            justify-content: flex-end; /* Align radios to the right, opposite of label */
+            flex-wrap: nowrap !important; /* CRITICAL: Force radios into a single line, override media queries */
+            min-width: 150px; /* Ensure enough space for two radios + labels */
+        }
+        .radio-group-inline label {
             display: flex;
             align-items: center;
             gap: 5px;
             cursor: pointer;
             user-select: none;
-            color: var(--text-color); /* Themed */
+            color: var(--text-color);
+            margin: 0;
+            min-width: unset;
+            text-align: left;
+            white-space: nowrap; /* Prevent radio label text from wrapping */
+            flex-shrink: 0; /* Prevent labels from shrinking */
+            /* 防止标签成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
-        .radio-group input[type="radio"] {
+        /* Radio button custom styling */
+        .radio-group-inline input[type="radio"] {
             -webkit-appearance: none;
             appearance: none;
-            background-color: var(--input-bg); /* Themed */
+            background-color: var(--input-bg);
             margin: 0;
             font: inherit;
             color: currentColor;
             width: 1.15em;
             height: 1.15em;
-            border: 0.15em solid var(--info-text-color); /* Themed */
+            border: 0.15em solid var(--info-text-color);
             border-radius: 50%;
             transform: translateY(-0.075em);
             display: grid;
             place-content: center;
             transition: background-color 0.2s, border-color 0.2s;
+            /* 防止单选框成为拖动区域 */
+            -webkit-app-region: no-drag;
         }
 
-        .radio-group input[type="radio"]::before {
+        .radio-group-inline input[type="radio"]::before {
             content: "";
             width: 0.65em;
             height: 0.65em;
             border-radius: 50%;
             transform: scale(0);
             transition: transform 0.2s ease-in-out;
-            box-shadow: inset 1em 1em var(--button-toggle-active-start); /* Themed (uses accent green) */
+            box-shadow: inset 1em 1em var(--button-toggle-active-start);
             background-color: CanvasText;
         }
 
-        .radio-group input[type="radio"]:checked::before {
+        .radio-group-inline input[type="radio"]:checked::before {
             transform: scale(1);
         }
-        .radio-group input[type="radio"]:focus {
+        .radio-group-inline input[type="radio"]:focus {
             outline: max(2px, 0.15em) solid currentColor;
             outline-offset: max(2px, 0.15em);
+        }
+
+        /* Single button row centering */
+        .settings-row-compact.single-button-center {
+            justify-content: center;
+            border-bottom: none; /* Ensure no bottom border for the very last row */
         }
 
         /* Custom Alert Box */
@@ -836,14 +1098,36 @@
             text-align: center;
             max-width: 400px; 
             width: 90%;
+            /* 防止警告框成为拖动区域，因为它的子元素有按钮 */
+            -webkit-app-region: no-drag;
         }
         #custom-alert-box button {
             background: linear-gradient(135deg, var(--button-primary-start), var(--button-primary-end)); /* Themed */
             color: var(--text-color); /* Themed */
         }
 
+        /* Mark Button (now inside overlay-controls, inheriting its base styles) */
+        #overlay-controls #markStarButton {
+            /* Inherits width, height, background, border-radius, etc. from general #overlay-controls button */
+            /* Override font-size for unicode character */
+            font-size: 1.8em; /* Adjust to make the Unicode character larger, fits 40px button better */
+            /* No explicit opacity/visibility here, inherited from parent #overlay-controls */
+        }
 
-        /* Responsive adjustments */
+        /* Style for the Unicode icon within the mark button */
+        #overlay-controls #markStarButton .mark-icon {
+            font-size: inherit; /* Inherits from parent button */
+            line-height: 1; /* For vertical centering */
+            display: block;
+            /* 防止图标成为拖动区域 */
+            -webkit-app-region: no-drag;
+        }
+
+        /* Marked state color for the button (background and text color handled by .active class) */
+        /* No specific .marked .mark-icon color override needed if button's text color changes */
+
+
+        /* Responsive adjustments - Keep these for other UI elements, but override for settings rows */
         @media (max-width: 768px) {
             #controls-menu {
                 width: 95%;
@@ -857,11 +1141,6 @@
             }
 
             .folder-browser-header {
-                /*
-                Removed flex-direction: column; and align-items: flex-start;
-                This allows it to stay as a row and wrap items naturally due to flex-wrap: wrap;
-                It will only become column when absolutely necessary due to content size.
-                */
                 flex-wrap: wrap; /* Re-enable wrapping for small screens if content exceeds width */
                 justify-content: space-between; /* Keep space-between for alignment */
                 gap: 5px; /* Smaller gap when stacked or tightly packed */
@@ -869,7 +1148,6 @@
 
             .folder-browser-header h1 {
                 font-size: 1.5em;
-                /* No change for white-space: nowrap here, it's global for h1 in this header */
             }
 
             .folder-browser-header #current-library-path {
@@ -883,15 +1161,17 @@
                 overflow: hidden; /* Ensure overflow handling */
                 text-overflow: ellipsis; /* Ensure ellipsis */
             }
-            /* Add this to allow path to wrap within its own box on small screens once it's forced to a new line */
-            .folder-browser-header #goUpFolderButton {
+            .folder-browser-header-buttons {
+                flex-wrap: wrap; /* Allow buttons to wrap */
+                justify-content: flex-end; /* Align right if they wrap */
+                gap: 5px; /* Smaller gap */
+            }
+            .folder-browser-header #goUpFolderButton,
+            .folder-browser-header #libraryFilterMarkedToggle {
                 font-size: 0.8em;
                 padding: 6px 10px;
                 width: auto; /* Auto width */
-                order: 2; /* Position it after h1 and before path if wraps */
-                /* align-self: flex-end; -- Removed this as it conflicts with horizontal alignment in wrap scenario */
             }
-
 
             #thumbnails-grid-container {
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -936,14 +1216,13 @@
                 gap: 8px;
             }
             #overlay-controls button {
-                padding: 8px 12px;
-                font-size: 0.8em;
-                height: 35px;
-                min-width: 35px;
-            }
-            #overlay-controls button.icon-only {
                 width: 35px;
                 height: 35px;
+            }
+            #overlay-controls button svg,
+            #overlay-controls button .mark-icon {
+                width: 24px;
+                height: 24px;
             }
 
             #image-navigation-controls button {
@@ -957,30 +1236,60 @@
                 right: 10px;
                 gap: 8px;
             }
+            /* Main menu circular icon buttons (settings, random, filter marked) - keeping fixed sizes, no more scaling */
             #settings-button,
-            #random-playback-toggle {
-                width: 35px;
-                height: 35px;
-                font-size: 1.2em;
+            #random-playback-toggle,
+            #filter-marked-toggle { 
+                width: 36px; /* Fixed size, not scaled by media query */
+                height: 36px; /* Fixed size, not scaled by media query */
+                font-size: 1.5em; /* Not scaled by media query */
             }
             #settings-button svg,
-            #random-playback-toggle svg {
-                width: 24px; /* Smaller icons for small screens */
-                height: 24px;
+            #random-playback-toggle svg,
+            #filter-marked-toggle svg {
+                width: 24px; /* Fixed size, not scaled by media query */
+                height: 24px; /* Fixed size, not scaled by media query */
             }
 
             #settings-modal-content {
-                width: 95%;
+                width: 95%; /* Make it almost full width on small screens */
                 padding: 20px;
+                gap: 10px; /* Further reduce gap on small screens */
             }
-            .radio-group {
-                flex-direction: column;
+
+            /* Settings row adjustments for mobile - will be overridden by !important now */
+            .settings-row-compact {
+                flex-direction: row; /* Keep as row due to nowrap */
+                align-items: center;
+                gap: 5px; /* Smaller gap */
+                justify-content: space-between; /* Distribute items */
+                white-space: nowrap; /* Ensure no wrapping */
+                overflow-x: auto; /* Add horizontal scroll for settings row if needed on very small screens */
             }
-            #right-controls-hover-zone {
-                width: 100px;
+            .settings-row-compact label {
+                width: auto; /* Reset width */
+                text-align: right;
+                min-width: unset; /* Reset min-width */
             }
-            #bottom-controls-hover-zone {
-                height: 70px;
+            .settings-row-compact .control-group {
+                width: auto; /* Reset width */
+                flex-grow: 0;
+            }
+            .settings-row-compact .compact-btn {
+                flex-grow: 0; /* Reset flex-grow */
+            }
+            .settings-row-compact .flex-grow-input-display {
+                width: auto; /* Reset width */
+                min-width: 50px; /* Smallest possible input on mobile */
+            }
+
+            .radio-group-inline {
+                flex-direction: row; /* Keep as row due to nowrap */
+                justify-content: flex-end;
+                gap: 5px; /* Smaller gap */
+            }
+            .radio-group-inline label {
+                width: auto; /* Reset width */
             }
 
             #settings-modal-theme-toggle {
@@ -1018,26 +1327,40 @@
                 <button id="preset120s" class="toggle">120秒</button>
                 <button id="preset300s" class="toggle">300秒</button>
                 <button id="preset600s" class="toggle">600秒</button>
+                <button id="presetInfiniteTime" class="toggle">♾️</button> <!-- NEW: Infinite time option -->
             </div>
             <div class="buttons-group">
-                <button id="startButton" class="primary">开始速写</button>
+                <button id="startButton" class="primary" data-tooltip="开始速写">开始速写</button>
             </div>
             <div class="buttons-group">
                 <button id="mirrorToggle" class="toggle">镜像</button>
                 <button id="grayscaleToggle" class="toggle">灰度</button>
                 <button id="gridToggle" class="toggle">网格</button>
+                <!-- Existing Always On Top button for main menu, re-ordered and styled -->
+                <button id="mainMenuAlwaysOnTopToggle" class="toggle">
+                    置顶
+                </button>
             </div>
-            <p style="font-size: 0.8em; text-align: center; color: var(--info-text-color); margin-top: 15px;">小提示: 开始后鼠标悬停在图片上可显示控制菜单。</p>
+            <!-- Modified hint text element -->
+            <p id="mainMenuHintText" style="font-size: 0.8em; text-align: center; color: var(--info-text-color); margin-top: 15px;">
+                选择文件夹以开始速写。
+            </p>
 
             <!-- 设置按钮和随机/顺序播放按钮 - 右上角图标 -->
             <div id="top-right-menu-buttons">
-                <button id="random-playback-toggle" class="toggle" data-tooltip="随机/顺序播放">
+                <button id="filter-marked-toggle" class="toggle active" data-tooltip="过滤已标记">
+                    <!-- Icon for filtering marked images (e.g., a filter or tag icon) -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                    </svg>
+                </button>
+                <button id="random-playback-toggle" class="toggle" data-tooltip="随机">
                     <!-- Icon for random playback (shuffle) -->
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M10.59 9.17L5.41 4H21V2H3v10.59l5.59-5.59 2.59 2.58zM14.59 14.83L19.59 19H3v2h18v-9.59L14.59 14.83z"/>
                     </svg>
                 </button>
-                <button id="settings-button" class="toggle">
+                <button id="settings-button" class="toggle" data-tooltip="设置">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.1-.69-1.72-.94L14.44 2.87c-.07-.23-.28-.39-.52-.39h-4c-.24 0-.45.16-.52.39L9.17 5.75c-.62.25-1.19.55-1.72.94l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.1.69 1.72.94l.44 2.88c.07.23.28.39.52.39h4c.24 0 .45-.16.52-.39l.44-2.88c.62-.25 1.19-.55 1.72-.94l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
                     </svg>
@@ -1051,36 +1374,41 @@
             <canvas id="grid-canvas"></canvas>
             <div id="countdown"></div>
 
+            
             <!-- 鼠标悬停区域 - 右侧 -->
             <div id="right-controls-hover-zone">
                 <!-- 浮动控制菜单 (播放时鼠标悬停显示) -->
                 <div id="overlay-controls" class="glassmorphism">
-                    <button id="openInFinderButton" class="toggle icon-only" data-tooltip="在文件夹中打开">
+                    <button id="openInFinderButton" class="toggle" data-tooltip="在文件夹中打开">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
                         </svg>
                     </button>
-                    <button id="overlayMirrorToggle" class="toggle icon-only" data-tooltip="镜像">
+                    <!-- New: Mark Button - moved here -->
+                    <button id="markStarButton" class="toggle" data-tooltip="未标记">
+                        <span class="mark-icon">&#x2022;</span> <!-- Simple Dot -->
+                    </button>
+                    <button id="overlayMirrorToggle" class="toggle" data-tooltip="镜像">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M11 5H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h5v2h2V3h-2v2zm7 0h-5v2h5c1.1 0 2 .9 2 2v6c0 1.1-.9 2-2 2h-5v2h5c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/>
                         </svg>
                     </button>
-                    <button id="overlayGrayscaleToggle" class="toggle icon-only" data-tooltip="灰度">
+                    <button id="overlayGrayscaleToggle" class="toggle" data-tooltip="灰度">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20 4h-4L12 12 8 4H4v16h4v-8l4 8 4-8v8h4V4zm-8 4l-4 8H8l4-8 4 8h-4V4z"/>
                         </svg>
                     </button>
-                    <button id="overlayGridToggle" class="toggle icon-only" data-tooltip="网格">
+                    <button id="overlayGridToggle" class="toggle" data-tooltip="网格">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20H4v-4h4v4zm0-6H4v-4h4v4zm0-6H4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4z"/>
                         </svg>
                     </button>
-                    <button id="toggleAlwaysOnTopButton" class="toggle icon-only" data-tooltip="置顶">
+                    <button id="toggleAlwaysOnTopButton" class="toggle" data-tooltip="置顶">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M7 17h10V7H7v10zm2-8h6v6H9V9zm-5 4V9c0-1.1.9-2 2-2h4V5H6c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h4v-2H6v2c-1.1 0-2-.9-2-2zm14 0c0 1.1-.9 2-2 2h-4v2h4c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-4v2h4v2c1.1 0 2 .9 2 2v4z"/>
                         </svg>
                     </button>
-                    <button id="backToMenuButton" class="primary icon-only" data-tooltip="返回菜单" style="font-size: 1.5em;">
+                    <button id="backToMenuButton" class="primary" data-tooltip="返回菜单">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                         </svg>
@@ -1107,14 +1435,19 @@
         </div>
 
         <!-- 文件夹浏览器视图 -->
-        <div id="folder-browser-view" class="glassmorphism hidden">
+        <div id="folder-browser-view" class="glassmorphism">
             <!-- New: Folder browser header -->
             <div class="folder-browser-header">
                 <h1>图片库</h1>
                 <div id="current-library-path"></div>
-                <button id="goUpFolderButton" class="toggle">
-                    <span style="font-size: 1.2em; margin-right: 5px;">⬆</span>返回上级
-                </button>
+                <div class="folder-browser-header-buttons">
+                    <button id="libraryFilterMarkedToggle" class="toggle" data-tooltip="过滤已标记">
+                        <span class="mark-icon">&#x2022;</span> <!-- Solid circle icon for consistency -->
+                    </button>
+                    <button id="goUpFolderButton" class="toggle">
+                        <span style="font-size: 1.2em; margin-right: 5px;">⬆</span>返回上级
+                    </button>
+                </div>
             </div>
             
             <div id="thumbnails-grid-container">
@@ -1142,59 +1475,57 @@
             <!-- New: Theme toggle button inside settings modal -->
             <button id="settings-modal-theme-toggle" class="toggle" data-tooltip="切换主题">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.12-1.36a5.5 5.5 0 00-6.09-6.09A9.006 9.006 0 0012 3m0 2a7 7 0 110 14V5a7 7 0 010 14"/>
+                    <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.12-1.36a5.5 5.5 0 00-6.09-6.09A9.006 9.006 S 12 3 12 3M12 5a7 7 0 110 14V5a7 7 0 010 14"/>
                 </svg>
             </button>
 
             <h2>设置</h2>
-            <!-- 主菜单背景设置 -->
-            <div class="input-group">
-                <label>主菜单背景:</label>
-                <div class="buttons-group">
-                    <button id="changeMainMenuBackgroundButton" class="primary">更换主菜单背景</button>
-                    <button id="resetMainMenuBackgroundButton" class="primary">重置主菜单背景</button>
+
+            <!-- Row 1: 背景设置 -->
+            <div class="settings-row-compact">
+                <label>背景:</label>
+                <div class="control-group background-controls">
+                    <span class="sub-label">菜单:</span>
+                    <button id="changeMainMenuBackgroundButton" class="primary compact-btn">更换</button>
+                    <button id="resetMainMenuBackgroundButton" class="primary compact-btn">重置</button>
+                </div>
+                <div class="control-group background-controls">
+                    <span class="sub-label">预览:</span>
+                    <button id="changePreviewBackgroundButton" class="primary compact-btn">更换</button>
+                    <button id="resetPreviewBackgroundButton" class="primary compact-btn">重置</button>
                 </div>
             </div>
-            <!-- 图片预览背景设置 -->
-            <div class="input-group">
-                <label>图片预览背景:</label>
-                <div class="buttons-group">
-                    <button id="changePreviewBackgroundButton" class="primary">更换预览背景</button>
-                    <button id="resetPreviewBackgroundButton" class="primary">重置预览背景</button>
+
+            <!-- Row 2: 默认路径 -->
+            <div class="settings-row-compact">
+                <label>默认路径:</label>
+                <input type="text" id="defaultImageFolderPathDisplay" readonly placeholder="未设置默认路径" class="flex-grow-input-display">
+                <button id="setDefaultImageFolderButton" class="primary compact-btn">设置</button>
+                <button id="clearDefaultImageFolderButton" class="primary compact-btn">清除</button>
+            </div>
+
+            <!-- Row 3: 网格设置 -->
+            <div class="settings-row-compact">
+                <label>网格:</label>
+                <span class="sub-label">颜色:</span>
+                <input type="color" id="gridColorPicker" value="#FFFFFF" class="color-picker-compact">
+                <span class="sub-label">大小 (px):</span>
+                <input type="number" id="gridSizeInput" value="50" min="10" max="200" step="10" class="number-input-compact">
+                <button id="resetGridSettingsButton" class="primary compact-btn">重置</button> <!-- Combined reset for grid -->
+            </div>
+
+            <!-- Row 4: 时间格式 -->
+            <div class="settings-row-compact">
+                <label>时间格式:</label>
+                <div class="radio-group-inline">
+                    <label><input type="radio" name="timeFormat" value="hours:minutes:seconds" checked> 时:分:秒</label>
+                    <label><input type="radio" name="timeFormat" value="seconds"> 只秒</label>
                 </div>
             </div>
-            <!-- 默认图片文件夹设置 -->
-            <div class="input-group">
-                <label for="defaultImageFolderPathDisplay">默认图片文件夹路径:</label>
-                <input type="text" id="defaultImageFolderPathDisplay" readonly placeholder="未设置默认路径">
-                <div class="buttons-group">
-                    <button id="setDefaultImageFolderButton" class="primary">设置默认路径</button>
-                    <button id="clearDefaultImageFolderButton" class="primary">清除默认路径</button>
-                </div>
-            </div>
-            <!-- 网格颜色设置 -->
-            <div class="input-group">
-                <label for="gridColorPicker">网格颜色:</label>
-                <input type="color" id="gridColorPicker" value="#FFFFFF"> <!-- 初始默认白色 -->
-            </div>
-            <div class="buttons-group">
-                <button id="resetGridColorButton" class="primary">重置网格颜色</button>
-            </div>
-            <!-- 网格大小设置 -->
-            <div class="input-group">
-                <label for="gridSizeInput">网格大小 (像素):</label>
-                <input type="number" id="gridSizeInput" value="50" min="10" max="200" step="10">
-            </div>
-            <div class="buttons-group">
-                <button id="resetGridSizeButton" class="primary">重置网格大小</button>
-            </div>
-            <!-- 显示时间格式设置 -->
-            <div class="input-group">
-                <label>显示时间格式:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="timeFormat" value="minutes:seconds" checked> 分:秒</label>
-                    <label><input type="radio" name="timeFormat" value="seconds"> 秒</label>
-                </div>
+
+            <!-- Row 5: 工具 -->
+            <div class="settings-row-compact single-button-center">
+                <button id="openSketchLogButton" class="primary">打开速写日志</button>
             </div>
         </div>
     </div>
@@ -1209,6 +1540,7 @@
         const mirrorToggle = document.getElementById('mirrorToggle');
         const grayscaleToggle = document.getElementById('grayscaleToggle');
         const gridToggle = document.getElementById('gridToggle');
+        const mainMenuHintText = document.getElementById('mainMenuHintText'); // New: Main menu hint text element
 
         // Preset time buttons and their container
         const presetTimeButtonsContainer = document.getElementById('preset-time-buttons');
@@ -1217,7 +1549,8 @@
         const preset120sButton = document.getElementById('preset120s');
         const preset300sButton = document.getElementById('preset300s'); 
         const preset600sButton = document.getElementById('preset600s'); 
-        const presetTimes = [30, 60, 120, 300, 600]; // Array of preset times
+        const presetInfiniteTime = document.getElementById('presetInfiniteTime'); // NEW: Infinite time option
+        const presetTimes = [30, 60, 120, 300, 600, Infinity]; // Array of preset times, including Infinity
 
         const imageDisplayArea = document.getElementById('image-display-area');
         const currentImage = document.getElementById('current-image');
@@ -1229,8 +1562,12 @@
         const rightControlsHoverZone = document.getElementById('right-controls-hover-zone');
         const overlayControls = document.getElementById('overlay-controls');
         const openInFinderButton = document.getElementById('openInFinderButton'); 
+        
+        // New: Mark Star Button
+        const markStarButton = document.getElementById('markStarButton'); 
+
         const overlayMirrorToggle = document.getElementById('overlayMirrorToggle');
-        const overlayGrayscaleToggle = document.getElementById('overlayGrayscaleToggle');
+        const overlayGrayscaleToggle = document = document.getElementById('overlayGrayscaleToggle');
         const overlayGridToggle = document.getElementById('overlayGridToggle');
         const toggleAlwaysOnTopButton = document.getElementById('toggleAlwaysOnTopButton'); 
         const backToMenuButton = document.getElementById('backToMenuButton');
@@ -1239,12 +1576,20 @@
         const bottomControlsHoverZone = document.getElementById('bottom-controls-hover-zone');
         const imageNavigationControls = document.getElementById('image-navigation-controls'); 
         const prevImageButton = document.getElementById('prevImageButton'); 
-        const nextImageButton = document.getElementById('nextImageButton'); 
+        const nextImageButton = document = document.getElementById('nextImageButton');
         const pausePlayButton = document.getElementById('pausePlayButton'); 
 
         // Settings modal related elements
         const settingsButton = document.getElementById('settings-button'); 
         const randomPlaybackToggle = document.getElementById('random-playback-toggle'); // New random/sequential playback button
+        // New: Filter Marked Images Toggle
+        const filterMarkedToggle = document.getElementById('filter-marked-toggle');
+        // Main Menu Always On Top Toggle (now consistent with Mirror/Grayscale/Grid)
+        const mainMenuAlwaysOnTopToggle = document.getElementById('mainMenuAlwaysOnTopToggle');
+
+        // New: Top-right menu buttons container
+        const topRightMenuButtons = document.getElementById('top-right-menu-buttons');
+
         const settingsModalOverlay = document.getElementById('settings-modal-overlay');
         const closeSettingsModalButton = document.getElementById('closeSettingsModal');
         const changeMainMenuBackgroundButton = document.getElementById('changeMainMenuBackgroundButton'); 
@@ -1252,12 +1597,11 @@
         const changePreviewBackgroundButton = document.getElementById('changePreviewBackgroundButton'); 
         const resetPreviewBackgroundButton = document.getElementById('resetPreviewBackgroundButton'); 
         const gridColorPicker = document.getElementById('gridColorPicker'); 
-        const resetGridColorButton = document.getElementById('resetGridColorButton'); 
+        const resetGridSettingsButton = document.getElementById('resetGridSettingsButton'); // Combined reset button
         const gridSizeInput = document.getElementById('gridSizeInput'); 
-        const resetGridSizeButton = document.getElementById('resetGridSizeButton'); 
         const timeFormatRadios = document.querySelectorAll('input[name="timeFormat"]'); 
-        // Removed original themeToggle from top-right-menu-buttons
         const settingsModalThemeToggle = document.getElementById('settings-modal-theme-toggle'); // New theme toggle button inside settings modal
+        const openSketchLogButton = document.getElementById('openSketchLogButton'); // New: Open Sketch Log Button
 
         // Default image folder settings related DOM elements
         const defaultImageFolderPathDisplay = document.getElementById('defaultImageFolderPathDisplay');
@@ -1269,20 +1613,24 @@
         const currentLibraryPathDisplay = document.getElementById('current-library-path');
         const thumbnailsGridContainer = document.getElementById('thumbnails-grid-container');
         const selectFolderForSketchAndReturnToMenuButton = document.getElementById('selectFolderForSketchAndReturnToMenuButton'); 
-        const selectNewFolderFromBrowserButton = document.getElementById('selectNewFolderFromBrowserButton');
+        const selectNewFolderFromBrowserButton = document = document.getElementById('selectNewFolderFromBrowserButton');
         const backFromBrowserToMenuButton = document.getElementById('backFromBrowserToMenuButton');
         const folderBrowserInfoMessage = document.getElementById('folderBrowserInfoMessage'); 
         const goUpFolderButton = document.getElementById('goUpFolderButton'); 
+        // New: Library Filter Marked Toggle
+        const libraryFilterMarkedToggle = document.getElementById('libraryFilterMarkedToggle');
+
 
         // Pagination elements
         const prevPageButton = document.getElementById('prevPageButton');
-        const nextPageButton = document.getElementById('nextPageButton');
+        const nextPageButton = document = document.getElementById('nextPageButton');
         const pageInfoDisplay = document.getElementById('pageInfoDisplay');
 
 
         // State variables
         let imageFiles = []; // Stores image file objects (including original path etc.) for sketching
         let imageUrls = []; // Stores file:// URLs for displaying images for sketching
+        let currentPlaybackImageIndexes = []; // Stores raw indices of images currently eligible for playback
         let currentImageIndex = -1; 
         let displayTime = 60; 
         let countdownTimer; 
@@ -1298,18 +1646,23 @@
         let isGridEnabled = false;
         let isAlwaysOnTop = false; 
         let isRandomPlayback = true; // New: default to random playback
+        let isFilterMarkedEnabled = true; // New: default to true (filter marked images) - for playback
+        let isLibraryFilterMarkedEnabled = false; // New: default to false (show all images) - for library view
         let isLightThemeEnabled = false; // New: default to dark theme
 
         // Image playback history
         let displayedImageHistory = [];
         let historyPointer = -1; 
 
+        // New: Global image marks object. Keys are original file paths, values are arrays of { duration, timestamp }
+        let imageMarks = {}; 
+
         // Default settings values
         const defaultMainMenuBackground = 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)';
         const defaultPreviewBackground = '#1a1a2e'; // Pure dark background as default preview background
         const defaultGridColorHex = '#FFFFFF'; 
         const defaultGridSize = 50; 
-        const defaultTimeFormat = 'minutes:seconds'; 
+        const defaultTimeFormat = 'hours:minutes:seconds'; // Changed default to "时:分:秒"
         const gridAlpha = 0.3; 
 
         // Current setting values (will be loaded from storage)
@@ -1405,6 +1758,8 @@
             controlsMenu.classList.remove('hidden');
             folderBrowserView.classList.add('hidden'); // Hide image library view
             imageDisplayArea.classList.add('hidden'); // Hide image display area
+            topRightMenuButtons.classList.remove('hidden'); // Show top-right menu buttons
+
             applyBackground(currentMainMenuBackgroundPath, false); // Apply main menu background
             updateNavigationButtons(); // Update button states
 
@@ -1412,21 +1767,58 @@
             if (selectedFolderForSketch) {
                 sketchFolderInputDisplay.textContent = selectedFolderForSketch;
                 // At this point, imageFiles and imageUrls should have been populated by showFolderBrowserView
-                startButton.disabled = (imageUrls.length === 0);
+                // Re-calculate playback pool to ensure start button reflects filter state correctly
+                updatePlaybackImagePool(); 
             } else {
                 // Otherwise, reset to unselected state and disable start button
                 sketchFolderInputDisplay.textContent = '点击选择速写文件夹...'; // Initial prompt text
-                startButton.disabled = true;
-                // Ensure loaded images are cleared to prevent sketching when no folder is selected
                 imageFiles = [];
                 imageUrls = [];
+                currentPlaybackImageIndexes = []; // Also clear playback pool
+                updatePlaybackImagePool(); // Update the button state for "no folder selected"
+            }
+            updateMainMenuHintText(); // Update hint text when showing main menu
+        }
+
+        /**
+         * Checks if all images directly within a given folder are marked.
+         * This function does NOT recurse into subdirectories.
+         * @param {string} folderPath - The path to the folder to check.
+         * @returns {Promise<boolean>} - True if all direct images are marked, false otherwise.
+         */
+        async function isFolderCompleted(folderPath) {
+            if (!window.electronAPI) {
+                console.warn('Electron API not available for folder completion check.');
+                return false;
+            }
+
+            try {
+                // Read only the direct contents of the folder
+                const items = await window.electronAPI.readFolderImages(folderPath);
+                const directImages = items.filter(item => item.type === 'file');
+
+                if (directImages.length === 0) {
+                    return false; // A folder with no direct images cannot be "completed"
+                }
+
+                for (const imageFile of directImages) {
+                    // Check if the image path exists as a key in imageMarks and has at least one mark
+                    if (!imageMarks[imageFile.originalPath] || imageMarks[imageFile.originalPath].length === 0) {
+                        return false; // Found an unmarked image
+                    }
+                }
+                return true; // All direct images found were marked
+            } catch (error) {
+                console.error(`Error checking folder completion for ${folderPath}:`, error);
+                return false; // Assume not completed if an error occurs
             }
         }
+
 
         /**
          * Renders thumbnails for the current page in the folder browser.
          */
-        function renderCurrentPageThumbnails() {
+        async function renderCurrentPageThumbnails() {
             thumbnailsGridContainer.innerHTML = ''; // Clear previous thumbnails
             folderBrowserInfoMessage.classList.add('hidden'); // Hide info message by default
 
@@ -1443,7 +1835,7 @@
                 folderBrowserInfoMessage.classList.remove('hidden');
             }
 
-            itemsToDisplay.forEach(item => {
+            for (const item of itemsToDisplay) { // Changed to for...of loop to use await
                 const thumbnailItem = document.createElement('div');
                 thumbnailItem.classList.add('thumbnail-item');
                 
@@ -1453,6 +1845,16 @@
                         <div class="thumbnail-label">${item.name}</div>
                     `;
                     thumbnailItem.addEventListener('click', () => showFolderBrowserView(item.path)); // Click folder to enter
+
+                    // New: Check if folder is completed and add a mark
+                    const completed = await isFolderCompleted(item.path);
+                    if (completed) {
+                        const completedInfoDiv = document.createElement('div');
+                        completedInfoDiv.classList.add('thumbnail-folder-completed-info');
+                        completedInfoDiv.textContent = '已完成';
+                        thumbnailItem.appendChild(completedInfoDiv);
+                    }
+
                 } else if (item.type === 'file') {
                     const imgElement = document.createElement('img');
                     imgElement.src = item.path; // Use file:// protocol path
@@ -1464,6 +1866,40 @@
 
                     thumbnailItem.appendChild(imgElement);
                     thumbnailItem.appendChild(labelElement);
+
+                    // Add mark info and delete button
+                    const marks = imageMarks[item.originalPath];
+                    if (marks && marks.length > 0) {
+                        const latestMark = marks.sort((a, b) => b.timestamp - a.timestamp)[0];
+                        const date = new Date(latestMark.timestamp);
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        const day = date.getDate().toString().padStart(2, '0');
+                        const formattedDateShort = `${month}/${day}`;
+
+                        const markInfoDiv = document.createElement('div');
+                        markInfoDiv.classList.add('thumbnail-mark-info');
+                        markInfoDiv.innerHTML = `
+                            ${formattedDateShort} (${latestMark.duration === 0 ? '∞' : latestMark.duration + 's'})
+                            <span class="delete-mark-button" data-path="${item.originalPath}">&times;</span>
+                        `;
+                        thumbnailItem.appendChild(markInfoDiv);
+
+                        // Attach event listener for the delete button
+                        const deleteButton = markInfoDiv.querySelector('.delete-mark-button');
+                        deleteButton.addEventListener('click', async (e) => {
+                            e.stopPropagation(); // Prevent opening image or folder when clicking delete
+                            const pathToDelete = e.target.dataset.path;
+                            const scrollPos = thumbnailsGridContainer.scrollTop; // Capture scroll position
+                            if (window.electronAPI && pathToDelete) {
+                                await window.electronAPI.clearImageMarksForPath(pathToDelete);
+                                imageMarks = await window.electronAPI.getImageMarks(); // Reload marks
+                                updatePlaybackImagePool(); // Also update the playback pool for main menu
+                                renderCurrentPageThumbnails(); // Re-render current page
+                                thumbnailsGridContainer.scrollTop = scrollPos; // Restore scroll position
+                                updateMainMenuHintText(); // Update hint text when marks are changed
+                            }
+                        });
+                    }
 
                     // Add double-click to open image in system viewer
                     thumbnailItem.addEventListener('dblclick', () => {
@@ -1481,7 +1917,7 @@
                     });
                 }
                 thumbnailsGridContainer.appendChild(thumbnailItem);
-            });
+            }
 
             // Update pagination info and button states
             const totalPages = Math.ceil(currentFolderItems.length / itemsPerPage);
@@ -1536,6 +1972,8 @@
             controlsMenu.classList.add('hidden');
             imageDisplayArea.classList.add('hidden');
             folderBrowserView.classList.remove('hidden'); // Show image library view
+            topRightMenuButtons.classList.remove('hidden'); // Show top-right menu buttons in folder browser view
+
             applyBackground(currentMainMenuBackgroundPath, false); // Image library view also uses main menu background
 
             currentLoadedFolderPath = folderPath; // Update current loaded folder path
@@ -1560,6 +1998,9 @@
             const parentPath = getParentPath(folderPath);
             goUpFolderButton.classList.toggle('hidden', !parentPath);
 
+            // Update the library filter button state
+            libraryFilterMarkedToggle.classList.toggle('active', isLibraryFilterMarkedEnabled);
+
             try {
                 const items = await window.electronAPI.readFolderImages(folderPath);
 
@@ -1569,9 +2010,17 @@
                     return;
                 }
 
-                // Separate and sort items for display and for actual playback
                 const directories = items.filter(item => item.type === 'directory');
-                const allImageFilesForPlayback = items.filter(item => item.type === 'file');
+                let allImageFilesForPlayback = items.filter(item => item.type === 'file');
+
+                // Apply library filter here for display
+                if (isLibraryFilterMarkedEnabled) {
+                    allImageFilesForPlayback = allImageFilesForPlayback.filter(file => {
+                        const isMarked = imageMarks[file.originalPath] && imageMarks[file.originalPath].length > 0;
+                        return !isMarked; // Only keep unmarked images
+                    });
+                }
+
 
                 // Sort image files for sequential playback
                 allImageFilesForPlayback.sort((a, b) => naturalSort(a.name, b.name));
@@ -1580,18 +2029,22 @@
                 imageFiles = allImageFilesForPlayback.map(file => ({ name: file.name, path: file.originalPath }));
                 imageUrls = allImageFilesForPlayback.map(file => file.path);
 
+                // NEW: Update the playback image pool after loading files
+                updatePlaybackImagePool();
+
                 // Combine all items (directories + sorted images) for pagination display
                 currentFolderItems = directories.concat(allImageFilesForPlayback);
                 currentPage = 0; // Reset to first page
-                renderCurrentPageThumbnails(); // Render the first page
+                await renderCurrentPageThumbnails(); // Wait for thumbnails to render including folder completion checks
 
                 if (imageUrls.length > 0) {
                     selectFolderForSketchAndReturnToMenuButton.disabled = false; // Enable "Select this folder" only if there are images
                 } else {
                     selectFolderForSketchAndReturnToMenuButton.disabled = true; // Disable if no images
                 }
+                updateMainMenuHintText(); // Update hint text after loading folder content
 
-            } catch (error) {
+            }  catch (error) {
                 console.error('Failed to load images/folders for folder browser:', error);
                 folderBrowserInfoMessage.textContent = `加载图片库失败：${error.message || '未知错误'}`;
                 folderBrowserInfoMessage.classList.remove('hidden');
@@ -1673,7 +2126,7 @@
 
         /**
          * Sets time display format and saves to settings.
-         * @param {string} format - Time format ('minutes:seconds' or 'seconds').
+         * @param {string} format - Time format ('hours:minutes:seconds' or 'seconds').
          */
         function setTimeFormat(format) {
             currentTimeFormat = format;
@@ -1747,12 +2200,19 @@
                 const savedTimeFormat = await window.electronAPI.loadSetting('timeFormat');
                 if (savedTimeFormat) {
                     currentTimeFormat = savedTimeFormat;
+                    // Ensure the correct radio button is checked even if the value changed
                     timeFormatRadios.forEach(radio => {
                         if (radio.value === savedTimeFormat) {
                             radio.checked = true;
+                        } else {
+                             // Handle old "minutes:seconds" format by mapping it to "hours:minutes:seconds"
+                            if (savedTimeFormat === "minutes:seconds" && radio.value === "hours:minutes:seconds") {
+                                radio.checked = true;
+                                currentTimeFormat = "hours:minutes:seconds"; // Update internal state
+                            }
                         }
                     });
-                    setTimeFormat(savedTimeFormat); 
+                    setTimeFormat(currentTimeFormat); // Call setTimeFormat with the potentially updated format
                 } else {
                     currentTimeFormat = defaultTimeFormat;
                     timeFormatRadios.forEach(radio => {
@@ -1770,6 +2230,23 @@
                 // Load random playback setting
                 isRandomPlayback = await window.electronAPI.loadSetting('isRandomPlayback') ?? true; // Default to true if not set
                 randomPlaybackToggle.classList.toggle('active', isRandomPlayback);
+
+                // Load filter marked setting (for playback)
+                isFilterMarkedEnabled = await window.electronAPI.loadSetting('isFilterMarkedEnabled') ?? true; // Default to true (filter marked)
+                filterMarkedToggle.classList.toggle('active', isFilterMarkedEnabled);
+
+                // Load library filter marked setting
+                isLibraryFilterMarkedEnabled = await window.electronAPI.loadSetting('isLibraryFilterMarkedEnabled') ?? false; // Default to false (show all)
+                libraryFilterMarkedToggle.classList.toggle('active', isLibraryFilterMarkedEnabled);
+
+                // Load always on top setting
+                isAlwaysOnTop = await window.electronAPI.loadSetting('isAlwaysOnTop') ?? false; // Default to false
+                // Update both buttons here
+                mainMenuAlwaysOnTopToggle.classList.toggle('active', isAlwaysOnTop);
+                toggleAlwaysOnTopButton.classList.toggle('active', isAlwaysOnTop);
+
+                // New: Load image marks
+                imageMarks = await window.electronAPI.getImageMarks();
 
 
                 // Determine initial view based on default image folder
@@ -1802,11 +2279,11 @@
             gridToggle.classList.toggle('active', isGridEnabled);
             overlayMirrorToggle.classList.toggle('active', isMirrorEnabled);
             overlayGrayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
-            overlayGridToggle.classList.toggle('active', isGridEnabled); 
-            toggleAlwaysOnTopButton.classList.toggle('active', isAlwaysOnTop); 
+            overlayGridToggle.classList.toggle('active', isGridEnabled); /* Fixed typo here */
 
             // Initialize preset time buttons
-            updatePresetTimeButtons(parseInt(displayTimeInput.value, 10));
+            displayTime = 60; // Ensure displayTime is initialized for updatePresetTimeButtons
+            updatePresetTimeButtons(displayTime); // Call with initial displayTime value
         });
 
         /**
@@ -1833,34 +2310,57 @@
          * This function is now also called from advanceImage and when starting from the main menu.
          */
         function initiateSketchSession() {
-            displayTime = parseInt(displayTimeInput.value, 10);
-
-            if (isNaN(displayTime) || displayTime <= 0) {
+            // displayTime is now controlled directly by preset button clicks,
+            // or potentially from input field.
+            // When infinite time is chosen, displayTime will be Infinity.
+            if (displayTime !== Infinity && (isNaN(displayTime) || displayTime <= 0)) {
                 showCustomAlert('请设置一个有效的图片显示时间 (大于0的整数)。', '时间设置错误');
                 return;
             }
-            // Check if the current sketch image list is empty
-            if (imageUrls.length === 0) {
-                showCustomAlert('没有可供速写的图片。请先在图片库中选择一个文件夹。', '图片缺失错误');
+            
+            // IMPORTANT: Re-populate the playback image pool to ensure the latest filter setting is applied
+            // This is crucial if the filter was changed while in main menu, or after folder selection.
+            updatePlaybackImagePool(); 
+
+            if (currentPlaybackImageIndexes.length === 0) {
+                // The tooltip on the start button should already indicate why it's disabled.
+                // An alert here might be redundant but can be kept as a secondary feedback for non-Electron or specific errors.
+                let errorMessage = '没有可供播放的图片。请选择一个图片文件夹或调整筛选设置。';
+                let errorTitle = '图片缺失错误';
+
+                if (imageUrls.length > 0 && isFilterMarkedEnabled) {
+                    // If images were loaded but all are filtered out by marking
+                    errorMessage = '该文件夹下图片已全部标记';
+                    errorTitle = '播放结束';
+                } else if (imageUrls.length === 0) {
+                    // No images loaded at all (no folder selected or empty folder)
+                    errorMessage = '没有可供播放的图片。请先在图片库中选择一个文件夹。';
+                    errorTitle = '图片缺失错误';
+                }
+
+                showCustomAlert(errorMessage, errorTitle);
+                stopGame(); // Stop the session if no images are available in the filtered pool
                 return;
             }
 
-            // Reset image history
+            // Reset image history (should only contain indices from currentPlaybackImageIndexes)
             displayedImageHistory = [];
             historyPointer = -1;
             isPaused = false; // Ensure not paused when starting
             pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
 
             controlsMenu.classList.add('hidden');
-            folderBrowserView.classList.add('hidden'); // Hide image library view
+            folderBrowserView.classList.add('hidden');
             imageDisplayArea.classList.remove('hidden'); // Show image display area
+            topRightMenuButtons.classList.add('hidden'); // Hide top-right menu buttons during playback
             
             // Apply preview background when entering preview mode
             applyBackground(currentPreviewBackgroundPath, true);
 
             isPlaying = true;
             
-            advanceImage(true); // Initiate with a new session start
+            // Start with an image from the available (filtered) list
+            advanceImage(true, false); // Pass true for isStartingNewSession, filteredIndexes is now implicitly handled
             updateNavigationButtons(); 
         }
 
@@ -1875,73 +2375,78 @@
         /**
          * Sets preset time and updates the input field.
          * Also handles the active state of buttons.
-         * @param {number} time - Preset time (seconds).
+         * @param {number} time - Preset time (seconds or Infinity).
          * @param {HTMLElement} [activeButton] - The currently clicked button element. If not provided, it's inferred.
          */
         function setPresetTime(time, activeButton = null) {
-            displayTimeInput.value = time;
             displayTime = time;
+            // Update input display: show "∞" for infinite, otherwise the number
+            displayTimeInput.value = (time === Infinity) ? '∞' : time; 
+            
+            // Disable number input if infinite time is selected
+            displayTimeInput.disabled = (time === Infinity);
+
             updatePresetTimeButtons(time, activeButton);
+            updateMainMenuHintText(); // Update hint text when display time changes
         }
 
         /**
-         * Updates the active and disabled state of preset time buttons based on the current input value.
-         * @param {number} currentValue - The current value of the displayTimeInput.
+         * Updates the active and disabled state of preset time buttons based on the current displayTime.
+         * This function ensures that only one preset button is active at a time, and that the numeric input
+         * reflects the currently selected preset or a custom value. It also manages the disabled state
+         * of the numeric input based on whether 'Infinity' is selected.
+         * @param {number} currentDisplayTimeValue - The current value of displayTime (seconds or Infinity).
          * @param {HTMLElement} [clickedButton=null] - The button that was just clicked, if any.
          */
-        function updatePresetTimeButtons(currentValue, clickedButton = null) {
+        function updatePresetTimeButtons(currentDisplayTimeValue, clickedButton = null) {
             const presetButtons = presetTimeButtonsContainer.querySelectorAll('.toggle');
             
-            // If a button was clicked, activate it and make all others clickable
+            // Remove 'active' and 'disabled-preset' from all buttons first
+            presetButtons.forEach(btn => {
+                btn.classList.remove('active', 'disabled-preset');
+            });
+
             if (clickedButton) {
-                presetButtons.forEach(btn => {
-                    btn.classList.remove('active', 'disabled-preset');
-                });
+                // If a button was explicitly clicked, activate it
                 clickedButton.classList.add('active');
             } else {
-                // If value was manually typed, check for match
+                // If the change came from the input field or initial load, find the matching preset
+                // and activate it.
                 let matched = false;
                 presetButtons.forEach(btn => {
-                    const presetValue = parseInt(btn.textContent, 10); // Extract number from "XX秒"
-                    if (currentValue === presetValue) {
+                    const presetValue = (btn.id === 'presetInfiniteTime') ? Infinity : parseInt(btn.textContent, 10);
+                    if (currentDisplayTimeValue === presetValue) {
                         btn.classList.add('active');
-                        btn.classList.remove('disabled-preset'); // Ensure it's not disabled if it matches
                         matched = true;
-                    } else {
-                        btn.classList.remove('active');
-                        // If there's no match for the current input, disable other presets
-                        btn.classList.add('disabled-preset');
                     }
                 });
-
-                // If no preset matched the manually entered value, ensure all are disabled-preset
-                if (!matched) {
-                    presetButtons.forEach(btn => btn.classList.add('disabled-preset'));
-                } else {
-                    // If there was a match, ensure unmatched buttons are not disabled for general use, only for the "active" state logic.
-                    // This means they should be clickable but not active.
-                    presetButtons.forEach(btn => {
-                        if (!btn.classList.contains('active')) {
-                            btn.classList.remove('disabled-preset'); // Make non-active but clickable
-                        }
-                    });
-                }
             }
+
+            // Ensure the number input field is enabled/disabled correctly based on whether 'Infinity' is selected.
+            displayTimeInput.disabled = (currentDisplayTimeValue === Infinity);
         }
 
         // Input event listener for displayTimeInput
         displayTimeInput.addEventListener('input', (event) => {
-            const inputValue = parseInt(event.target.value, 10);
-            updatePresetTimeButtons(inputValue);
+            const inputValue = event.target.value;
+            if (inputValue === '∞') {
+                displayTime = Infinity;
+            } else {
+                const numValue = parseInt(inputValue, 10);
+                // Only update displayTime if it's a valid number greater than 0
+                if (!isNaN(numValue) && numValue >= 1) { 
+                    displayTime = numValue;
+                } else {
+                    // If invalid input (e.g., empty or text), ensure displayTime reflects invalid state
+                    // or reset to a default/previous valid value if desired.
+                }
+            }
+            // Always update preset buttons and hint text when input changes,
+            // so active state and messages are current.
+            updatePresetTimeButtons(displayTime); 
+            updateMainMenuHintText(); 
         });
 
-
-        // Preset time button event listeners
-        preset30sButton.addEventListener('click', (event) => setPresetTime(30, event.target));
-        preset60sButton.addEventListener('click', (event) => setPresetTime(60, event.target));
-        preset120sButton.addEventListener('click', (event) => setPresetTime(120, event.target));
-        preset300sButton.addEventListener('click', (event) => setPresetTime(300, event.target)); 
-        preset600sButton.addEventListener('click', (event) => setPresetTime(600, event.target)); 
 
         /**
          * Opens the settings modal.
@@ -1965,6 +2470,27 @@
             randomPlaybackToggle.classList.toggle('active', isRandomPlayback);
             if (window.electronAPI) {
                 await window.electronAPI.saveSetting('isRandomPlayback', isRandomPlayback);
+            }
+        });
+
+        /**
+         * Toggles filtering of marked images (for playback).
+         */
+        filterMarkedToggle.addEventListener('click', async () => {
+            isFilterMarkedEnabled = !isFilterMarkedEnabled;
+            filterMarkedToggle.classList.toggle('active', isFilterMarkedEnabled);
+            if (window.electronAPI) {
+                await window.electronAPI.saveSetting('isFilterMarkedEnabled', isFilterMarkedEnabled);
+            }
+            // Always update the image pool when filter setting changes
+            updatePlaybackImagePool();
+            updateMainMenuHintText(); // Update hint text when filter changes
+
+            // If currently in playback mode, stop and restart to apply the new filter immediately
+            // If not playing, or in the main menu, the next 'Start Sketch' will use the updated pool.
+            if (isPlaying) {
+                stopGame(); // Stop current playback
+                showCustomAlert('已更新图片筛选设置。请重新开始速写。', '设置更新');
             }
         });
 
@@ -2089,15 +2615,6 @@
         });
 
         /**
-         * Resets grid color
-         */
-        resetGridColorButton.addEventListener('click', () => {
-            gridColorPicker.value = defaultGridColorHex;
-            setGridColor(defaultGridColorHex);
-            showCustomAlert('网格颜色已重置为默认。', '网格设置');
-        });
-
-        /**
          * Grid size input change event
          */
         gridSizeInput.addEventListener('input', (event) => {
@@ -2110,12 +2627,14 @@
         });
 
         /**
-         * Resets grid size
+         * Resets grid color and size to default.
          */
-        resetGridSizeButton.addEventListener('click', () => {
+        resetGridSettingsButton.addEventListener('click', () => {
+            gridColorPicker.value = defaultGridColorHex;
+            setGridColor(defaultGridColorHex);
             gridSizeInput.value = defaultGridSize;
             setGridSize(defaultGridSize);
-            showCustomAlert('网格大小已重置为默认。', '网格设置');
+            showCustomAlert('网格设置已重置为默认。', '网格设置');
         });
 
         /**
@@ -2172,20 +2691,29 @@
 
         /**
          * Toggles window always-on-top status.
+         * Updates both the main menu button and the overlay button.
          */
-        toggleAlwaysOnTopButton.addEventListener('click', () => {
+        function toggleAlwaysOnTop() {
             isAlwaysOnTop = !isAlwaysOnTop;
             if (window.electronAPI) { 
                 window.electronAPI.setAlwaysOnTop(isAlwaysOnTop);
+                // Also save the setting for persistence
+                window.electronAPI.saveSetting('isAlwaysOnTop', isAlwaysOnTop);
             } else {
                 showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
             }
-        });
+            // Update both UI elements
+            mainMenuAlwaysOnTopToggle.classList.toggle('active', isAlwaysOnTop);
+            toggleAlwaysOnTopButton.classList.toggle('active', isAlwaysOnTop);
+        }
+        toggleAlwaysOnTopButton.addEventListener('click', toggleAlwaysOnTop);
+        mainMenuAlwaysOnTopToggle.addEventListener('click', toggleAlwaysOnTop);
 
         // Listen for always-on-top status from main process to sync button state
         if (window.electronAPI) {
             window.electronAPI.onAlwaysOnTopStatus((status) => {
                 isAlwaysOnTop = status;
+                mainMenuAlwaysOnTopToggle.classList.toggle('active', isAlwaysOnTop);
                 toggleAlwaysOnTopButton.classList.toggle('active', isAlwaysOnTop);
             });
         }
@@ -2203,78 +2731,285 @@
             }
         });
 
+        // New: Mark Star button click handler
+        markStarButton.addEventListener('click', async () => {
+            if (window.electronAPI && currentImageIndex !== -1 && imageFiles[currentImageIndex]) {
+                const filePath = imageFiles[currentImageIndex].path;
+                const imageName = imageFiles[currentImageIndex].name; // Get image name
+
+                // Check if current image is already marked
+                const isMarked = imageMarks[filePath] && imageMarks[filePath].length > 0;
+
+                if (isMarked) {
+                    // If marked, clear all marks for this image
+                    await window.electronAPI.clearImageMarksForPath(filePath);
+                    // After clearing, reload marks and update playback pool (if filter is active)
+                    imageMarks = await window.electronAPI.getImageMarks();
+                    updatePlaybackImagePool(); // Re-calculate playback pool
+                } else {
+                    // If not marked, add a new mark
+                    // For infinite mode, the duration is not relevant for auto-marking, but we still store it.
+                    const duration = (displayTime === Infinity) ? 0 : displayTime; // Store 0 for infinite, actual duration otherwise
+                    await window.electronAPI.saveImageMark(filePath, duration);
+                    // After saving, reload marks and update playback pool (if filter is active)
+                    imageMarks = await window.electronAPI.getImageMarks();
+                    updatePlaybackImagePool(); // Re-calculate playback pool
+                }
+                updateMarkingUI(); // Update UI immediately
+                updateMainMenuHintText(); // Update hint text when marking changes
+                // Important: Re-render the folder browser view to update folder completion marks
+                if (!folderBrowserView.classList.contains('hidden')) {
+                    await showFolderBrowserView(currentLoadedFolderPath); 
+                }
+            } else {
+                // Keep the alert for actual operation failure, not just UI feedback
+                showCustomAlert('无法操作标记。请确保已选择图片文件夹并开始速写。', '操作失败');
+            }
+        });
+
+
         /**
-         * Displays the next image in sequence or a random one, based on the playback mode.
-         * This function handles both automatic advancement (from timer) and manual 'next' clicks.
-         * It also updates history.
-         * @param {boolean} isStartingNewSession - True if this call initiates a new sketch session.
+         * Updates the UI related to image marking (icon state and tooltip).
          */
-        function advanceImage(isStartingNewSession = false) {
-            if (imageUrls.length === 0) {
-                showCustomAlert('没有可供播放的图片。请选择一个图片文件夹。', '图片缺失错误');
-                stopGame();
+        function updateMarkingUI() {
+            const markIconSpan = markStarButton.querySelector('.mark-icon'); // Get the span for icon
+            if (currentImageIndex === -1 || !imageFiles[currentImageIndex]) {
+                markStarButton.classList.remove('active'); // No active class
+                markStarButton.setAttribute('data-tooltip', '未标记');
                 return;
             }
 
-            let newIndex;
+            const currentImagePath = imageFiles[currentImageIndex].path;
+            const marks = imageMarks[currentImagePath];
+
+            if (marks && marks.length > 0) {
+                markStarButton.classList.add('active'); // Add 'active' class to change background
+                // Sort marks by timestamp to get the latest one
+                marks.sort((a, b) => b.timestamp - a.timestamp);
+                const latestMark = marks[0];
+                const date = new Date(latestMark.timestamp);
+                
+                // Format timestamp into readable date/time (MM/DD)
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const formattedDateShort = `${month}/${day}`;
+
+                // Show "∞" for duration if it was marked in infinite mode (duration 0)
+                const displayDuration = (latestMark.duration === 0) ? '∞' : `${latestMark.duration}s`;
+
+                // Construct a detailed tooltip string in the requested format
+                markStarButton.setAttribute('data-tooltip', `${formattedDateShort} (${displayDuration})`);
+            } else {
+                markStarButton.classList.remove('active'); // Remove 'active' class
+                markStarButton.setAttribute('data-tooltip', '未标记');
+            }
+        }
+
+        /**
+         * Updates the global currentPlaybackImageIndexes array based on the filter setting.
+         * This function should be called whenever the selected folder changes or the filter setting changes.
+         */
+        function updatePlaybackImagePool() {
+            currentPlaybackImageIndexes = [];
+            for (let i = 0; i < imageUrls.length; i++) {
+                const filePath = imageFiles[i].path;
+                // If filter is enabled AND image is marked, skip it
+                if (isFilterMarkedEnabled && imageMarks[filePath] && imageMarks[filePath].length > 0) {
+                    continue; 
+                }
+                currentPlaybackImageIndexes.push(i); // Add the raw index to the eligible list
+            }
+            // Sort the eligible indices based on the original file names for sequential playback consistency
+            currentPlaybackImageIndexes.sort((a, b) => naturalSort(imageFiles[a].name, imageFiles[b].name));
+            
+            // Re-enable/disable start button based on the filtered list length
+            startButton.disabled = (currentPlaybackImageIndexes.length === 0);
+
+            // Update tooltip for the start button
+            if (startButton.disabled) {
+                if (imageUrls.length > 0 && isFilterMarkedEnabled && currentPlaybackImageIndexes.length === 0) {
+                    // All images exist, filter is on, and all are marked
+                    startButton.setAttribute('data-tooltip', '该文件夹下图片已全部标记');
+                } else if (imageUrls.length > 0 && currentPlaybackImageIndexes.length === 0) {
+                    // Images exist, filter is off, but still no playable images (e.g., all were already filtered out without marking)
+                    // This case should ideally not happen if filtering is the *only* reason for empty pool and images exist.
+                    // Fallback to a generic "no playable images"
+                    startButton.setAttribute('data-tooltip', '没有可播放的图片');
+                } else {
+                    // No folder selected or empty folder
+                    startButton.setAttribute('data-tooltip', '请选择速写文件夹');
+                }
+            } else {
+                startButton.setAttribute('data-tooltip', '开始速写');
+            }
+        }
+
+        /**
+         * Formats total seconds into H:M:S, M:S, or S based on duration.
+         * @param {number} totalSeconds - The total number of seconds.
+         * @returns {string} - Formatted time string.
+         */
+        function formatTimeForHint(totalSeconds) {
+            if (totalSeconds === Infinity) {
+                return '无限制时间';
+            } else if (totalSeconds < 60) {
+                return `${totalSeconds}秒`;
+            } else if (totalSeconds < 3600) {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes}分${seconds}秒`;
+            } else {
+                const hours = Math.floor(totalSeconds / 3600);
+                const remainingMinutes = Math.floor((totalSeconds % 3600) / 60);
+                const remainingSeconds = totalSeconds % 60;
+                return `${hours}小时${remainingMinutes}分${remainingSeconds}秒`;
+            }
+        }
+
+        /**
+         * Updates the hint text in the main menu based on selected images and time.
+         */
+        function updateMainMenuHintText() {
+            const numImages = currentPlaybackImageIndexes.length;
+            let hintText = '';
+
+            if (currentLoadedFolderPath && numImages > 0) {
+                if (displayTime === Infinity) {
+                    hintText = `当前一共选择了${numImages}张图片，时间设置为无限制。`;
+                } else {
+                    const estimatedTotalTimeSeconds = numImages * displayTime;
+                    const formattedEstimatedTime = formatTimeForHint(estimatedTotalTimeSeconds);
+                    hintText = `当前一共选择了${numImages}张图片，估计耗时${formattedEstimatedTime}。`;
+                }
+            } else if (currentLoadedFolderPath && numImages === 0 && imageUrls.length > 0 && isFilterMarkedEnabled) {
+                // Folder selected, but all images are filtered out by marking
+                hintText = '该文件夹下图片已全部标记。请调整过滤设置或选择其他文件夹。';
+            } else if (currentLoadedFolderPath && numImages === 0 && imageUrls.length === 0) {
+                 // Folder selected, but no images were found at all
+                hintText = '当前文件夹中没有可速写的图片。';
+            }
+            else {
+                hintText = '选择文件夹以开始速写。';
+            }
+            mainMenuHintText.textContent = hintText;
+        }
+
+
+        /**
+         * Displays the next image in sequence or a random one, based on the playback mode.
+         * This function handles both automatic advancement (from timer) and manual 'next' clicks.
+         * It always operates on the `currentPlaybackImageIndexes` list.
+         * @param {boolean} isStartingNewSession - True if this call initiates a new sketch session.
+         * @param {boolean} isTimerTriggered - True if called by the timer (for auto-marking).
+         */
+        async function advanceImage(isStartingNewSession = false, isTimerTriggered = false) {
+            // First, re-check currentPlaybackImageIndexes in case the image was marked/unmarked mid-session
+            updatePlaybackImagePool(); 
+
+            if (currentPlaybackImageIndexes.length === 0) {
+                // Determine the specific error message
+                let errorMessage = '没有可供播放的图片。请选择一个图片文件夹或调整筛选设置。';
+                let errorTitle = '图片缺失错误';
+
+                if (imageUrls.length > 0 && isFilterMarkedEnabled) {
+                    // If images were loaded but all are filtered out by marking
+                    errorMessage = '该文件夹下图片已全部标记';
+                    errorTitle = '播放结束';
+                } else if (imageUrls.length === 0) {
+                    // No images loaded at all (no folder selected or empty folder)
+                    errorMessage = '没有可供播放的图片。请先在图片库中选择一个文件夹。';
+                    errorTitle = '图片缺失错误';
+                }
+
+                showCustomAlert(errorMessage, errorTitle);
+                stopGame(); // Stop the session if no images are available in the filtered pool
+                return;
+            }
+
+            // Only mark automatically if the timer triggered the advance (isTimerTriggered is true)
+            // AND it's not infinite mode AND it's not a brand new session start or initial load.
+            if (isTimerTriggered && currentImageIndex !== -1 && isPlaying && !isPaused && displayTime !== Infinity) {
+                const finishedImagePath = imageFiles[currentImageIndex].path;
+                const finishedDuration = displayTime;
+                await window.electronAPI.saveImageMark(finishedImagePath, finishedDuration);
+                imageMarks = await window.electronAPI.getImageMarks(); // Reload marks
+                updatePlaybackImagePool(); // Crucial: Re-evaluate playback pool after marking
+            }
+
+            let newIndexRaw; // This will be the index in the original imageUrls array
+
             if (isStartingNewSession) {
-                // Starting a completely new session or after "Select this folder"
                 displayedImageHistory = []; // Clear history
                 historyPointer = -1; // Reset pointer
 
                 if (isRandomPlayback) {
-                    newIndex = Math.floor(Math.random() * imageUrls.length);
+                    newIndexRaw = currentPlaybackImageIndexes[Math.floor(Math.random() * currentPlaybackImageIndexes.length)];
                 } else {
-                    newIndex = 0; // Always start from the first image in sequential mode (after sorting)
+                    newIndexRaw = currentPlaybackImageIndexes[0]; // Always start from the first eligible image
                 }
-                displayedImageHistory.push(newIndex);
+                displayedImageHistory.push(newIndexRaw);
                 historyPointer = 0;
 
             } else { // Not starting a new session (timer tick or manual 'next' click)
                 if (!isRandomPlayback) {
-                    // Sequential playback: Try to use history first, then go to next in sequence
-                    if (historyPointer < displayedImageHistory.length - 1) {
-                        historyPointer++;
-                        newIndex = displayedImageHistory[historyPointer];
+                    // Find the current image's index within the *current* filtered playback pool
+                    const currentPlaybackIndexInPool = currentPlaybackImageIndexes.indexOf(currentImageIndex);
+                    
+                    if (currentPlaybackIndexInPool === -1 || historyPointer >= displayedImageHistory.length -1) {
+                        // Case 1: Current image is no longer in the playback pool (e.g., just marked it).
+                        // Or Case 2: We are at the end of the history.
+                        // Find the next image in the *current* sorted playback pool.
+                        let nextPlaybackIndex = (currentPlaybackIndexInPool + 1) % currentPlaybackImageIndexes.length;
+                        newIndexRaw = currentPlaybackImageIndexes[nextPlaybackIndex];
+
+                        // If current image was not in pool, or we're at end of history,
+                        // clear future history and add the new image
+                        if (historyPointer < displayedImageHistory.length -1) {
+                            displayedImageHistory = displayedImageHistory.slice(0, historyPointer + 1);
+                        }
+                        displayedImageHistory.push(newIndexRaw);
+                        historyPointer = displayedImageHistory.length - 1;
+
                     } else {
-                        // At the end of history, get next sequential image
-                        newIndex = (currentImageIndex + 1) % imageUrls.length;
-                        displayedImageHistory.push(newIndex);
+                        // Normal sequential progression within history
                         historyPointer++;
+                        newIndexRaw = displayedImageHistory[historyPointer];
                     }
                 } else {
-                    // Random playback: Pick a new random image
-                    if (imageUrls.length === 1) {
-                        newIndex = 0; // Only one image, just show it
+                    // Random playback: Pick a new random image from the filtered list
+                    if (currentPlaybackImageIndexes.length === 1) {
+                        newIndexRaw = currentPlaybackImageIndexes[0];
                     } else {
+                        const previousRawIndex = currentImageIndex;
+                        let tempNewIndexRaw;
                         do {
-                            newIndex = Math.floor(Math.random() * imageUrls.length);
-                        } while (newIndex === currentImageIndex && imageUrls.length > 1);
+                            tempNewIndexRaw = currentPlaybackImageIndexes[Math.floor(Math.random() * currentPlaybackImageIndexes.length)];
+                        } while (tempNewIndexRaw === previousRawIndex && currentPlaybackImageIndexes.length > 1);
+                        newIndexRaw = tempNewIndexRaw;
                     }
 
-                    // For random, if user clicked 'prev' then 'next', we are not truly "new"
-                    // If we navigated back, and now pick random, we truncate future history.
+                    // Truncate history if navigating back then picking random
                     if (historyPointer < displayedImageHistory.length - 1) {
                         displayedImageHistory = displayedImageHistory.slice(0, historyPointer + 1);
                     }
-                    displayedImageHistory.push(newIndex);
+                    displayedImageHistory.push(newIndexRaw);
                     historyPointer = displayedImageHistory.length - 1;
                 }
             }
 
-            currentImageIndex = newIndex;
+            currentImageIndex = newIndexRaw;
             currentImage.src = imageUrls[currentImageIndex];
             applyImageEffects();
-            remainingTime = displayTime; // Reset time for a new image
+            remainingTime = displayTime; // remainingTime will be Infinity if displayTime is Infinity
             updateCountdownDisplay();
             updateNavigationButtons();
+            updateMarkingUI();
 
-            // Ensure playback state
             if (isPaused) {
                 isPaused = false;
                 pausePlayButton.textContent = '⏸';
             }
-            startCountdown(); // Auto-start countdown after image switch
+            startCountdown();
         }
 
         /**
@@ -2288,8 +3023,9 @@
                 currentImageIndex = displayedImageHistory[historyPointer];
                 currentImage.src = imageUrls[currentImageIndex];
                 applyImageEffects();
-                remainingTime = displayTime; // Reset time for a new image from history
+                remainingTime = displayTime; // Reset time for a new image from history (can be Infinity)
                 updateCountdownDisplay();
+                updateMarkingUI(); // New: Update marking UI after image changes
 
                 // Ensure playback state (resume if was paused, otherwise keep playing)
                 if (!isPaused) { // Only restart countdown if not explicitly paused
@@ -2302,13 +3038,29 @@
         }
 
         // Navigation button event listeners
+        preset30sButton.addEventListener('click', (event) => setPresetTime(30, event.target));
+        preset60sButton.addEventListener('click', (event) => setPresetTime(60, event.target));
+        preset120sButton.addEventListener('click', (event) => setPresetTime(120, event.target));
+        preset300sButton.addEventListener('click', (event) => setPresetTime(300, event.target)); 
+        preset600sButton.addEventListener('click', (event) => setPresetTime(600, event.target)); 
+        presetInfiniteTime.addEventListener('click', (event) => setPresetTime(Infinity, event.target)); // Event for infinite button
+
+        // Main menu start button now calls unified initiateSketchSession
+        startButton.addEventListener('click', initiateSketchSession);
+        // "Select this folder" button in image library view now returns to main menu and sets path
+        selectFolderForSketchAndReturnToMenuButton.addEventListener('click', () => {
+            showMainMenu(currentLoadedFolderPath); // Return to main menu and pass current loaded folder path
+        });
+
+        // Navigation button event listeners
         prevImageButton.addEventListener('click', showPreviousImage);
-        nextImageButton.addEventListener('click', () => advanceImage(false)); // Do not force new when clicking next
+        // Modified nextImageButton to NOT trigger auto-marking
+        nextImageButton.addEventListener('click', () => advanceImage(false, false)); // Manual next click, not timer triggered
 
         /**
          * Toggles pause/play for the countdown.
          */
-        pausePlayButton.addEventListener('click', () => {
+        function togglePausePlay() { // Renamed for clarity, logic is the same
             if (isPaused) {
                 // Currently paused, click to play
                 isPaused = false;
@@ -2321,7 +3073,9 @@
                 clearInterval(countdownTimer);
             }
             updateNavigationButtons(); 
-        });
+        }
+        pausePlayButton.addEventListener('click', togglePausePlay);
+
 
         /**
          * Starts the countdown.
@@ -2330,20 +3084,30 @@
          */
         function startCountdown() {
             clearInterval(countdownTimer); 
-            if (isPaused) { // If paused, do not start the interval
+            // If in infinite mode, or explicitly paused, do not start the interval
+            if (displayTime === Infinity || isPaused) { 
                 return;
             }
 
             // remainingTime is already set by advanceImage, or it's the value from before pausing.
             updateCountdownDisplay(); // Update display immediately when starting/resuming
 
-            countdownTimer = setInterval(() => {
+            countdownTimer = setInterval(async () => { // Made async to await saveImageMark
                 remainingTime--;
                 updateCountdownDisplay();
 
                 if (remainingTime <= 0) {
                     clearInterval(countdownTimer); 
-                    advanceImage(false); // Advance based on playback mode (not new session start)
+                    // Automatically mark image as sketched ONLY when timer runs out AND it's not infinite mode
+                    if (currentImageIndex !== -1 && imageFiles[currentImageIndex] && displayTime !== Infinity) {
+                        const finishedImagePath = imageFiles[currentImageIndex].path;
+                        const finishedDuration = displayTime;
+                        await window.electronAPI.saveImageMark(finishedImagePath, finishedDuration);
+                        // After saving, reload marks and update playback pool (if filter is active)
+                        imageMarks = await window.electronAPI.getImageMarks();
+                        updatePlaybackImagePool(); // Crucial: Re-evaluate playback pool after marking
+                    }
+                    advanceImage(false, true); // Advance, and signal it's timer triggered for auto-marking
                 }
             }, 1000); 
         }
@@ -2352,10 +3116,18 @@
          * Updates the countdown display text.
          */
         function updateCountdownDisplay() {
-            if (currentTimeFormat === 'minutes:seconds') {
-                const minutes = Math.floor(remainingTime / 60);
+            if (displayTime === Infinity) {
+                countdownElement.textContent = '♾️'; // Display infinity symbol for infinite time
+            } else if (currentTimeFormat === 'hours:minutes:seconds') { // Updated to handle hours
+                const hours = Math.floor(remainingTime / 3600);
+                const minutes = Math.floor((remainingTime % 3600) / 60);
                 const seconds = remainingTime % 60;
-                countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                let display = '';
+                if (hours > 0) {
+                    display += `${hours.toString().padStart(2, '0')}:`;
+                }
+                display += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                countdownElement.textContent = display;
             } else { // 'seconds'
                 countdownElement.textContent = `${remainingTime}s`;
             }
@@ -2379,10 +3151,30 @@
          * Updates the enabled/disabled state of navigation buttons.
          */
         function updateNavigationButtons() {
+            // Check if there's sufficient history to go back
             prevImageButton.disabled = (historyPointer <= 0);
-            // Next button is generally always enabled unless no images are loaded
-            nextImageButton.disabled = (imageUrls.length === 0);
-            pausePlayButton.disabled = (imageUrls.length === 0 || !isPlaying);
+            
+            // Next button is disabled if no images are left in the filtered pool
+            // OR if we are at the end of the history AND there's only one image in the current filtered pool (to prevent infinite looping with 'next' on single item)
+            // OR if we are at the very last image in the filtered sequence (for sequential playback)
+            let disableNext = currentPlaybackImageIndexes.length === 0;
+            if (!isRandomPlayback && currentPlaybackImageIndexes.length > 0) {
+                // Find the index of the current image within the *sorted* currentPlaybackImageIndexes
+                const currentFilteredIndex = currentPlaybackImageIndexes.indexOf(currentImageIndex);
+                if (currentFilteredIndex !== -1 && currentFilteredIndex === currentPlaybackImageIndexes.length - 1) {
+                    disableNext = true; // If it's the last image in sequence, disable next
+                }
+            } else if (currentPlaybackImageIndexes.length === 1 && currentPlaybackImageIndexes[0] === currentImageIndex) {
+                 // If there's only one image left, and it's currently displayed, disable next
+                 disableNext = true;
+            }
+
+
+            nextImageButton.disabled = disableNext;
+
+            // Pause/Play button should be disabled if no playable images at all.
+            // If in infinite mode, it should always be enabled to allow manual pause/play.
+            pausePlayButton.disabled = (currentPlaybackImageIndexes.length === 0 || (!isPlaying && displayTime !== Infinity));
         }
 
         /**
@@ -2414,7 +3206,7 @@
             for (let y = 0; y < gridCanvas.height; y += currentGridSize) { 
                 ctx.beginPath();
                 ctx.moveTo(0, y);
-                ctx.lineTo(gridCanvas.width, y);
+                ctx.lineTo(0, y);
                 ctx.stroke();
             }
         }
@@ -2431,12 +3223,16 @@
             imageDisplayArea.classList.add('hidden'); 
             controlsMenu.classList.remove('hidden'); 
             folderBrowserView.classList.add('hidden'); // Ensure image library view is also hidden
+            topRightMenuButtons.classList.remove('hidden'); // Show top-right menu buttons when returning to main menu
             currentImage.src = ''; 
             console.log('Sketch session stopped.');
 
             // Restore main menu background
             applyBackground(currentMainMenuBackgroundPath, false);
             updateNavigationButtons(); 
+            updateMarkingUI(); // Reset marking UI when returning to menu
+            updatePlaybackImagePool(); // Re-evaluate button tooltips on main menu
+            updateMainMenuHintText(); // Update hint text when returning to main menu
         }
 
         // Main menu return button
@@ -2473,6 +3269,29 @@
         // Pagination button event listeners
         prevPageButton.addEventListener('click', showPreviousPageOfThumbnails);
         nextPageButton.addEventListener('click', showNextPageOfThumbnails);
+
+        // New: Library filter marked toggle button event listener
+        libraryFilterMarkedToggle.addEventListener('click', async () => {
+            isLibraryFilterMarkedEnabled = !isLibraryFilterMarkedEnabled;
+            libraryFilterMarkedToggle.classList.toggle('active', isLibraryFilterMarkedEnabled);
+            if (window.electronAPI) {
+                await window.electronAPI.saveSetting('isLibraryFilterMarkedEnabled', isLibraryFilterMarkedEnabled);
+            }
+            // Re-render the current folder view with the new filter applied
+            showFolderBrowserView(currentLoadedFolderPath);
+        });
+
+        // New: Open Sketch Log button event listener
+        openSketchLogButton.addEventListener('click', async () => {
+            if (window.electronAPI) {
+                const result = await window.electronAPI.openLogFile();
+                if (!result.success) {
+                    showCustomAlert(result.message || '无法打开日志文件。', '错误');
+                }
+            } else {
+                showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
+            }
+        });
 
     </script>
 </body>
