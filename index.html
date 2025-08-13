@@ -654,12 +654,12 @@
         }
 
         #overlay-controls button.toggle.active {
-            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end)); /* Themed */
+            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end));
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
         }
 
         #overlay-controls button.toggle:not(.active):hover {
-            background: var(--button-toggle-hover-bg); /* Themed */
+            background: var(--button-toggle-hover-bg);
         }
 
         /* Icons inside buttons */
@@ -788,7 +788,7 @@
         /* Random playback toggle and filter marked toggle active state */
         #random-playback-toggle.active,
         #filter-marked-toggle.active {
-            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end)); /* Themed */
+            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end));
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
         }
         #settings-button:hover {
@@ -1793,7 +1793,6 @@
             }
 
             try {
-                // Read only the direct contents of the folder
                 const items = await window.electronAPI.readFolderImages(folderPath);
                 const directImages = items.filter(item => item.type === 'file');
 
@@ -1802,7 +1801,7 @@
                 }
 
                 for (const imageFile of directImages) {
-                    // Check if the image path exists as a key in imageMarks and has at least one mark
+                    // Note: imageFile.originalPath is used here because imageMarks keys are original paths
                     if (!imageMarks[imageFile.originalPath] || imageMarks[imageFile.originalPath].length === 0) {
                         return false; // Found an unmarked image
                     }
@@ -1817,6 +1816,7 @@
 
         /**
          * Renders thumbnails for the current page in the folder browser.
+         * This function is now async because it awaits `isFolderCompleted`.
          */
         async function renderCurrentPageThumbnails() {
             thumbnailsGridContainer.innerHTML = ''; // Clear previous thumbnails
@@ -1847,7 +1847,7 @@
                     thumbnailItem.addEventListener('click', () => showFolderBrowserView(item.path)); // Click folder to enter
 
                     // New: Check if folder is completed and add a mark
-                    const completed = await isFolderCompleted(item.path);
+                    const completed = await isFolderCompleted(item.path); // Await this async call
                     if (completed) {
                         const completedInfoDiv = document.createElement('div');
                         completedInfoDiv.classList.add('thumbnail-folder-completed-info');
@@ -1886,7 +1886,7 @@
 
                         // Attach event listener for the delete button
                         const deleteButton = markInfoDiv.querySelector('.delete-mark-button');
-                        deleteButton.addEventListener('click', async (e) => {
+                        deleteButton.addEventListener('click', async (e) => { // Make this async
                             e.stopPropagation(); // Prevent opening image or folder when clicking delete
                             const pathToDelete = e.target.dataset.path;
                             const scrollPos = thumbnailsGridContainer.scrollTop; // Capture scroll position
@@ -1894,8 +1894,11 @@
                                 await window.electronAPI.clearImageMarksForPath(pathToDelete);
                                 imageMarks = await window.electronAPI.getImageMarks(); // Reload marks
                                 updatePlaybackImagePool(); // Also update the playback pool for main menu
-                                renderCurrentPageThumbnails(); // Re-render current page
-                                thumbnailsGridContainer.scrollTop = scrollPos; // Restore scroll position
+                                await renderCurrentPageThumbnails(); // NOW AWAIT IT to ensure DOM is fully rebuilt
+                                // FIX: Defer scroll restoration slightly to allow DOM to render
+                                requestAnimationFrame(() => {
+                                    thumbnailsGridContainer.scrollTop = scrollPos; // Restore scroll position
+                                });
                                 updateMainMenuHintText(); // Update hint text when marks are changed
                             }
                         });
@@ -1904,11 +1907,14 @@
                     // Add double-click to open image in system viewer
                     thumbnailItem.addEventListener('dblclick', () => {
                         if (window.electronAPI && item.originalPath) {
-                            // Changed to openFileInDefaultApp
+                            console.log(`Renderer: Double-clicked to open file: ${item.originalPath}`); // Debug log
                             window.electronAPI.openFileInDefaultApp(item.originalPath)
                                 .then(result => {
                                     if (!result.success) {
                                         showCustomAlert(result.message || '无法打开文件。', '错误');
+                                        console.error('Renderer: Failed to open file in default app:', result.message || 'Unknown error'); // Debug log
+                                    } else {
+                                        console.log('Renderer: File opened successfully.'); // Debug log
                                     }
                                 });
                         } else {
@@ -2006,7 +2012,7 @@
 
                 if (items.length === 0) {
                     folderBrowserInfoMessage.textContent = `在 "${pathParts[pathParts.length - 1]}" 文件夹中未找到任何图片或子文件夹。`;
-                    renderCurrentPageThumbnails(); // Update pagination UI to reflect empty state
+                    await renderCurrentPageThumbnails(); // Update pagination UI to reflect empty state
                     return;
                 }
 
@@ -2049,7 +2055,7 @@
                 folderBrowserInfoMessage.textContent = `加载图片库失败：${error.message || '未知错误'}`;
                 folderBrowserInfoMessage.classList.remove('hidden');
                 selectFolderForSketchAndReturnToMenuButton.disabled = true; // Disable on failure
-                renderCurrentPageThumbnails(); // Update pagination UI for error state
+                await renderCurrentPageThumbnails(); // Update pagination UI for error state
             }
         }
 

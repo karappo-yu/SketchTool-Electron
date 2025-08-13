@@ -69,8 +69,8 @@ function createWindow() {
         height: savedBounds.height,
         x: savedBounds.x, // 使用上次保存的 X 坐标
         y: savedBounds.y, // 使用上次保存的 Y 坐标
-        minWidth: 600, // 最小宽度
-        minHeight: 400, // 最小高度
+        minWidth: 300, // 最小宽度已调整
+        minHeight: 200, // 最小高度已调整
         frame: false, // 隐藏原生标题栏，实现无边框窗口
         transparent: true, // 使窗口背景透明，以便 CSS 背景生效
         titleBarStyle: 'hidden', // macOS 上的隐藏标题栏样式
@@ -166,14 +166,16 @@ ipcMain.handle('open-file-in-finder', (event, filePath) => {
  * @param {string} filePath - 要打开的文件路径。
  */
 ipcMain.handle('open-file-in-default-app', async (event, filePath) => {
+    console.log(`Main Process: Attempting to open file in default app: ${filePath}`); // Debug log
     try {
         const result = await shell.openPath(filePath);
+        console.log(`Main Process: shell.openPath result for ${filePath}: ${result}`); // Debug log
         if (result.startsWith('Error')) {
             return { success: false, message: result };
         }
         return { success: true };
     } catch (error) {
-        console.error('Failed to open file in default app:', error);
+        console.error('Main Process: Failed to open file in default app:', error); // Debug log
         return { success: false, message: error.message };
     }
 });
@@ -288,8 +290,7 @@ ipcMain.handle('save-setting', (event, key, value) => {
 ipcMain.handle('load-setting', (event, key) => {
     try {
         return store.get(key);
-    }
-    catch (error) {
+    } catch (error) {
         console.error(`Failed to load setting ${key}:`, error);
         return null;
     }
