@@ -79,18 +79,35 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end));
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            /* REMOVE background properties from body here, they are moved to #dynamic-background-layer */
+            background: none; 
             color: var(--text-color);
             overflow: hidden;
-            transition: background 0.8s ease, color 0.8s ease;
+            /* transition moved to #dynamic-background-layer */
 
             /* Electron 拖动区域：将整个 body 设置为可拖动 */
             -webkit-app-region: drag;
         }
+
+        /* New: Dedicated layer for dynamic preview backgrounds */
+        #dynamic-background-layer {
+            position: fixed; /* Fixed to viewport */
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0; /* Behind everything else */
+            /* Apply background transitions here */
+            transition: background-color 0.8s ease, background-image 0.8s ease, filter 0.5s ease;
+            /* Ensure it's not draggable by default */
+            -webkit-app-region: no-drag;
+        }
+
+        /* New: Grayscale effect applied ONLY to the background layer */
+        #dynamic-background-layer.grayscale-active-bg {
+            filter: grayscale(100%);
+        }
+
 
         /* 玻璃拟态效果基础样式 */
         .glassmorphism {
@@ -115,6 +132,8 @@
             justify-content: center;
             align-items: center;
             position: relative;
+            z-index: 1; /* CRITICAL: Must be higher than #dynamic-background-layer */
+            background-color: transparent; /* Ensure app-container itself is transparent to show background layer */
             
             /* app-container 作为主内容区域，也应设为可拖动 */
             -webkit-app-region: drag;
@@ -392,6 +411,12 @@
             border-color: var(--button-primary-start);
             background-color: var(--button-toggle-hover-bg);
         }
+        input[type="number"]:disabled {
+            background-color: var(--button-toggle-bg); /* Slightly different background for disabled */
+            color: var(--info-text-color); /* Lighter text for disabled */
+            cursor: not-allowed;
+        }
+
 
         .buttons-group {
             display: flex;
@@ -777,22 +802,16 @@
             background: var(--button-toggle-hover-bg); /* Themed */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        #settings-button svg,
-        #random-playback-toggle svg,
-        #filter-marked-toggle svg {
-            fill: currentColor;
-            width: 24px; /* Optimized fixed size for icons */
-            height: 24px; /* Optimized fixed size for icons */
-        }
-
-        /* Random playback toggle and filter marked toggle active state */
-        #random-playback-toggle.active,
-        #filter-marked-toggle.active {
-            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end));
-            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
-        }
         #settings-button:hover {
             transform: rotate(15deg); 
+        }
+
+        /* NEW: Explicit active states for specific top-right circular buttons (higher specificity) */
+        #random-playback-toggle.active,
+        #filter-marked-toggle.active,
+        #settings-button.active { 
+            background: linear-gradient(135deg, var(--button-toggle-active-start), var(--button-toggle-active-end));
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
         }
 
 
@@ -1012,7 +1031,7 @@
         }
 
 
-        /* Radio button group for time format */
+        /* Radio button group for time format or preview background choice */
         .radio-group-inline {
             display: flex;
             gap: 10px; /* Reduced gap between radio options */
@@ -1304,6 +1323,9 @@
     </style>
 </head>
 <body>
+    <!-- New: Dedicated layer for dynamic preview backgrounds -->
+    <div id="dynamic-background-layer"></div>
+
     <div id="app-container">
         <!-- 控制菜单 -->
         <div id="controls-menu" class="glassmorphism">
@@ -1362,7 +1384,7 @@
                 </button>
                 <button id="settings-button" class="toggle" data-tooltip="设置">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.1-.69-1.72-.94L14.44 2.87c-.07-.23-.28-.39-.52-.39h-4c-.24 0-.45.16-.52.39L9.17 5.75c-.62.25-1.19.55-1.72.94l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.1.69 1.72.94l.44 2.88c.07.23.28.39.52.39h4c.24 0 .45-.16.52-.39l.44-2.88c.62-.25 1.19-.55 1.72-.94l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 2a8 8 0 100 16 8 8 0 000-16zM12 6a6 6 0 110 12 6 6 0 010-12z"/>
                     </svg>
                 </button>
             </div>
@@ -1475,25 +1497,46 @@
             <!-- New: Theme toggle button inside settings modal -->
             <button id="settings-modal-theme-toggle" class="toggle" data-tooltip="切换主题">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.12-1.36a5.5 5.5 0 00-6.09-6.09A9.006 9.006 S 12 3 12 3M12 5a7 7 0 110 14V5a7 7 0 010 14"/>
+                    <!-- Standard Sun icon path (corrected) -->
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 2a8 8 0 100 16 8 8 0 000-16zM12 6a6 6 0 110 12 6 6 0 010-12z"/>
                 </svg>
             </button>
 
             <h2>设置</h2>
 
-            <!-- Row 1: 背景设置 -->
+            <!-- Row 1: 菜单背景设置 -->
             <div class="settings-row-compact">
-                <label>背景:</label>
-                <div class="control-group background-controls">
-                    <span class="sub-label">菜单:</span>
-                    <button id="changeMainMenuBackgroundButton" class="primary compact-btn">更换</button>
-                    <button id="resetMainMenuBackgroundButton" class="primary compact-btn">重置</button>
+                <label>菜单背景:</label>
+                <div class="radio-group-inline" id="mainMenuBackgroundChoiceRadiosGroup">
+                    <label><input type="radio" name="mainMenuBackgroundChoice" value="solidColor" checked> 纯色</label>
+                    <label><input type="radio" name="mainMenuBackgroundChoice" value="staticImage"> 图片</label>
                 </div>
-                <div class="control-group background-controls">
-                    <span class="sub-label">预览:</span>
-                    <button id="changePreviewBackgroundButton" class="primary compact-btn">更换</button>
-                    <button id="resetPreviewBackgroundButton" class="primary compact-btn">重置</button>
+            </div>
+
+            <!-- Conditionally visible row for Main Menu Static Image Path Selection -->
+            <div class="settings-row-compact" id="mainMenuStaticImagePathRow" style="display: none;">
+                <label></label> <!-- Empty label to maintain alignment -->
+                <input type="text" id="mainMenuBackgroundPathDisplay" readonly placeholder="未选择静态图片" class="flex-grow-input-display">
+                <button id="selectMainMenuImageButton" class="primary compact-btn">选择</button>
+                <button id="clearMainMenuImageButton" class="primary compact-btn">清除</button>
+            </div>
+            
+            <!-- Row (Modified): 预览背景模式 -->
+            <div class="settings-row-compact">
+                <label>预览背景:</label>
+                <div class="radio-group-inline" id="previewBackgroundChoiceRadiosGroup">
+                    <label><input type="radio" name="previewBackgroundChoice" value="solidColor"> 纯色</label>
+                    <label><input type="radio" name="previewBackgroundChoice" value="averageColor"> 平均色</label>
+                    <label><input type="radio" name="previewBackgroundChoice" value="staticImage"> 静态图片</label>
                 </div>
+            </div>
+
+            <!-- Conditionally visible row for Preview Static Image Path Selection -->
+            <div class="settings-row-compact" id="staticImagePathRow" style="display: none;">
+                <label></label> <!-- Empty label to maintain alignment -->
+                <input type="text" id="previewBackgroundPathDisplay" readonly placeholder="未选择静态图片" class="flex-grow-input-display">
+                <button id="selectStaticImageButton" class="primary compact-btn">选择</button>
+                <button id="clearStaticImageButton" class="primary compact-btn">清除</button>
             </div>
 
             <!-- Row 2: 默认路径 -->
@@ -1529,10 +1572,16 @@
             </div>
         </div>
     </div>
+    
+    <!-- 隐藏的 Canvas，用于计算平均颜色 -->
+    <canvas id="hidden-image-canvas" style="display: none;"></canvas>
 
     <script>
         // Get DOM elements
         const appContainer = document.getElementById('app-container');
+        // New: Dedicated background layer element
+        const dynamicBackgroundLayer = document.getElementById('dynamic-background-layer');
+
         const controlsMenu = document.getElementById('controls-menu');
         const sketchFolderInputDisplay = document.getElementById('sketchFolderInputDisplay'); // Main menu sketch folder display/selection area
         const displayTimeInput = document.getElementById('displayTime');
@@ -1567,7 +1616,7 @@
         const markStarButton = document.getElementById('markStarButton'); 
 
         const overlayMirrorToggle = document.getElementById('overlayMirrorToggle');
-        const overlayGrayscaleToggle = document = document.getElementById('overlayGrayscaleToggle');
+        const overlayGrayscaleToggle = document.getElementById('overlayGrayscaleToggle');
         const overlayGridToggle = document.getElementById('overlayGridToggle');
         const toggleAlwaysOnTopButton = document.getElementById('toggleAlwaysOnTopButton'); 
         const backToMenuButton = document.getElementById('backToMenuButton');
@@ -1576,7 +1625,7 @@
         const bottomControlsHoverZone = document.getElementById('bottom-controls-hover-zone');
         const imageNavigationControls = document.getElementById('image-navigation-controls'); 
         const prevImageButton = document.getElementById('prevImageButton'); 
-        const nextImageButton = document = document.getElementById('nextImageButton');
+        const nextImageButton = document.getElementById('nextImageButton');
         const pausePlayButton = document.getElementById('pausePlayButton'); 
 
         // Settings modal related elements
@@ -1592,10 +1641,20 @@
 
         const settingsModalOverlay = document.getElementById('settings-modal-overlay');
         const closeSettingsModalButton = document.getElementById('closeSettingsModal');
-        const changeMainMenuBackgroundButton = document.getElementById('changeMainMenuBackgroundButton'); 
-        const resetMainMenuBackgroundButton = document.getElementById('resetMainMenuBackgroundButton'); 
-        const changePreviewBackgroundButton = document.getElementById('changePreviewBackgroundButton'); 
-        const resetPreviewBackgroundButton = document.getElementById('resetPreviewBackgroundButton'); 
+        // Main Menu Background New Elements
+        const mainMenuBackgroundChoiceRadios = document.querySelectorAll('input[name="mainMenuBackgroundChoice"]');
+        const mainMenuStaticImagePathRow = document.getElementById('mainMenuStaticImagePathRow');
+        const mainMenuBackgroundPathDisplay = document.getElementById('mainMenuBackgroundPathDisplay');
+        const selectMainMenuImageButton = document.getElementById('selectMainMenuImageButton');
+        const clearMainMenuImageButton = document.getElementById('clearMainMenuImageButton');
+
+        // Renamed/Refactored Preview Background Buttons
+        const previewBackgroundChoiceRadios = document.querySelectorAll('input[name="previewBackgroundChoice"]');
+        const staticImagePathRow = document.getElementById('staticImagePathRow');
+        const previewBackgroundPathDisplay = document.getElementById('previewBackgroundPathDisplay');
+        const selectStaticImageButton = document.getElementById('selectStaticImageButton');
+        const clearStaticImageButton = document.getElementById('clearStaticImageButton');
+
         const gridColorPicker = document.getElementById('gridColorPicker'); 
         const resetGridSettingsButton = document.getElementById('resetGridSettingsButton'); // Combined reset button
         const gridSizeInput = document.getElementById('gridSizeInput'); 
@@ -1613,7 +1672,7 @@
         const currentLibraryPathDisplay = document.getElementById('current-library-path');
         const thumbnailsGridContainer = document.getElementById('thumbnails-grid-container');
         const selectFolderForSketchAndReturnToMenuButton = document.getElementById('selectFolderForSketchAndReturnToMenuButton'); 
-        const selectNewFolderFromBrowserButton = document = document.getElementById('selectNewFolderFromBrowserButton');
+        const selectNewFolderFromBrowserButton = document.getElementById('selectNewFolderFromBrowserButton');
         const backFromBrowserToMenuButton = document.getElementById('backFromBrowserToMenuButton');
         const folderBrowserInfoMessage = document.getElementById('folderBrowserInfoMessage'); 
         const goUpFolderButton = document.getElementById('goUpFolderButton'); 
@@ -1623,8 +1682,12 @@
 
         // Pagination elements
         const prevPageButton = document.getElementById('prevPageButton');
-        const nextPageButton = document = document.getElementById('nextPageButton');
+        const nextPageButton = document.getElementById('nextPageButton');
         const pageInfoDisplay = document.getElementById('pageInfoDisplay');
+
+        // New: Hidden Canvas for Average Color Calculation
+        const hiddenImageCanvas = document.getElementById('hidden-image-canvas');
+        const hiddenImageCtx = hiddenImageCanvas.getContext('2d', { willReadFrequently: true }); // Optimized for frequent reads
 
 
         // State variables
@@ -1649,6 +1712,10 @@
         let isFilterMarkedEnabled = true; // New: default to true (filter marked images) - for playback
         let isLibraryFilterMarkedEnabled = false; // New: default to false (show all images) - for library view
         let isLightThemeEnabled = false; // New: default to dark theme
+        // Updated: Preview background choice can be 'solidColor', 'averageColor', 'staticImage'
+        let previewBackgroundChoice = 'solidColor'; // New: default preview background mode
+        let mainMenuBackgroundChoice = 'solidColor'; // New: default main menu background mode
+
 
         // Image playback history
         let displayedImageHistory = [];
@@ -1658,16 +1725,14 @@
         let imageMarks = {}; 
 
         // Default settings values
-        const defaultMainMenuBackground = 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)';
-        const defaultPreviewBackground = '#1a1a2e'; // Pure dark background as default preview background
         const defaultGridColorHex = '#FFFFFF'; 
         const defaultGridSize = 50; 
         const defaultTimeFormat = 'hours:minutes:seconds'; // Changed default to "时:分:秒"
         const gridAlpha = 0.3; 
 
         // Current setting values (will be loaded from storage)
-        let currentMainMenuBackgroundPath = ''; 
-        let currentPreviewBackgroundPath = ''; 
+        let currentMainMenuBackgroundPath = ''; // This will store the path for 'staticImage' mode for main menu
+        let currentPreviewBackgroundPath = ''; // This will store the path for 'staticImage' mode for preview
         let currentGridColorHex = defaultGridColorHex;
         let currentGridSize = defaultGridSize;
         let currentTimeFormat = defaultTimeFormat;
@@ -1681,12 +1746,15 @@
         /**
          * Natural sort comparator function for strings, handling numbers correctly.
          * From: https://stackoverflow.com/questions/38640203/javascript-sort-array-of-objects-by-property-containing-numbers-and-letters
-         * @param {string} a - First string to compare.
-         * @param {string} b - Second string to compare.
+         * @param {object} a - First object with a 'name' property to compare.
+         * @param {object} b - Second object with a 'name' property to compare.
          * @returns {number} - Comparison result.
          */
         function naturalSort(a, b) {
-            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+            // Ensure 'name' properties exist before calling localeCompare
+            const nameA = a.name || '';
+            const nameB = b.name || '';
+            return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
         }
 
 
@@ -1737,11 +1805,11 @@
             }
             // Reapply current background to ensure theme changes reflect
             if (!imageDisplayArea.classList.contains('hidden')) {
-                // If in preview mode, reapply preview background
-                applyBackground(currentPreviewBackgroundPath, true);
+                // If in preview mode, reapply preview background based on choice
+                updatePreviewBackground(); // Use unified function
             } else {
                 // If in menu/browser mode, reapply main menu background
-                applyBackground(currentMainMenuBackgroundPath, false);
+                updateMainMenuBackground(); // Use unified function
             }
             // Redraw grid if enabled to update its color based on theme
             if (isGridEnabled && !imageDisplayArea.classList.contains('hidden')) {
@@ -1749,6 +1817,140 @@
             }
         }
 
+        /**
+         * Calculates the average RGB color of an image loaded onto a canvas.
+         * @param {HTMLImageElement} imgElement - The image element to analyze.
+         * @returns {string} - The average color in 'rgb(R,G,B)' format.
+         */
+        function getAverageColor(imgElement) {
+            if (!imgElement.complete) {
+                console.warn('Image not fully loaded for average color calculation.');
+                return 'rgb(0,0,0)'; // Return black or transparent if not loaded
+            }
+
+            // Set canvas dimensions to image natural dimensions for full resolution sampling
+            // Use Math.max to prevent zero dimensions if image is not yet fully rendered
+            hiddenImageCanvas.width = Math.max(1, imgElement.naturalWidth || imgElement.offsetWidth);
+            hiddenImageCanvas.height = Math.max(1, imgElement.naturalHeight || imgElement.offsetHeight);
+
+            if (hiddenImageCanvas.width === 0 || hiddenImageCanvas.height === 0) {
+                console.warn('Cannot get average color for an image with zero dimensions after setting canvas.');
+                return 'rgb(0,0,0)';
+            }
+
+            hiddenImageCtx.clearRect(0, 0, hiddenImageCanvas.width, hiddenImageCanvas.height);
+            hiddenImageCtx.drawImage(imgElement, 0, 0, hiddenImageCanvas.width, hiddenImageCanvas.height);
+
+            const imageData = hiddenImageCtx.getImageData(0, 0, hiddenImageCanvas.width, hiddenImageCanvas.height).data;
+            let r = 0, g = 0, b = 0;
+            let count = 0;
+            const pixelCount = hiddenImageCanvas.width * hiddenImageCanvas.height;
+            // Sample up to 10,000 pixels for performance, or every pixel if image is small
+            const step = Math.max(1, Math.floor(pixelCount / 10000)); 
+
+            for (let i = 0; i < imageData.length; i += 4 * step) { // Increment by 4 (RGBA) * step
+                // const alpha = imageData[i + 3]; // Alpha component (not used for average color)
+                r += imageData[i];
+                g += imageData[i + 1];
+                b += imageData[i + 2];
+                count++;
+            }
+
+            if (count === 0) return 'rgb(0,0,0)'; // Avoid division by zero if all pixels are transparent or image is too small
+
+            const avgR = Math.floor(r / count);
+            const avgG = Math.floor(g / count);
+            const avgB = Math.floor(b / count);
+
+            return `rgb(${avgR},${avgG},${avgB})`;
+        }
+
+
+        /**
+         * Applies background to a specified element based on type and source.
+         * @param {HTMLElement} targetElement - The element to apply the background to (e.g., document.body or dynamicBackgroundLayer).
+         * @param {'menuGradient'|'previewSolid'|'staticImage'|'averageColor'} backgroundType - The type of background to apply.
+         * @param {string} [sourcePath=''] - The file path for 'staticImage' type, or a dynamic color for 'averageColor'.
+         */
+        function applyBackground(targetElement, backgroundType, sourcePath = '') {
+            // Clear previous styles from the target element first
+            targetElement.style.backgroundImage = '';
+            targetElement.style.backgroundColor = '';
+            targetElement.style.backgroundSize = '';
+            targetElement.style.backgroundPosition = '';
+            targetElement.style.backgroundRepeat = '';
+            targetElement.style.backgroundAttachment = '';
+
+            if (backgroundType === 'menuGradient') {
+                targetElement.style.backgroundImage = `linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end))`;
+            } else if (backgroundType === 'previewSolid') {
+                targetElement.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--default-preview-bg');
+            } else if (backgroundType === 'staticImage' && sourcePath) {
+                targetElement.style.backgroundImage = `url('file://${sourcePath}')`;
+                targetElement.style.backgroundSize = 'cover';
+                targetElement.style.backgroundPosition = 'center center';
+                targetElement.style.backgroundRepeat = 'no-repeat';
+                targetElement.style.backgroundAttachment = 'fixed';
+            } else if (backgroundType === 'averageColor' && sourcePath) {
+                targetElement.style.backgroundColor = sourcePath;
+            } else {
+                // Fallback to default solid preview background
+                targetElement.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--default-preview-bg');
+                console.warn(`Invalid backgroundType or missing sourcePath for background application on ${targetElement.id}: ${backgroundType}, ${sourcePath}`);
+            }
+        }
+
+        /**
+         * Updates the main menu and folder browser background based on selected choice.
+         */
+        function updateMainMenuBackground() {
+            // Ensure the dynamic layer is not showing its background
+            dynamicBackgroundLayer.style.backgroundImage = 'none';
+            dynamicBackgroundLayer.style.backgroundColor = 'transparent';
+            dynamicBackgroundLayer.classList.remove('grayscale-active-bg'); // Ensure grayscale is off for this layer
+
+            if (mainMenuBackgroundChoice === 'staticImage') {
+                applyBackground(document.body, 'staticImage', currentMainMenuBackgroundPath);
+            } else { // 'solidColor' (which maps to 'menuGradient' for main menu)
+                applyBackground(document.body, 'menuGradient');
+            }
+        }
+
+        /**
+         * Updates the preview background based on selected choice (solid, average, static image).
+         * This function now only handles setting the background image/color.
+         * Grayscale effect is handled by updatePreviewBackgroundGrayscaleEffect().
+         */
+        function updatePreviewBackground() {
+            // Ensure the body's background is transparent when preview layer is active
+            document.body.style.backgroundImage = 'none';
+            document.body.style.backgroundColor = 'transparent';
+
+            if (previewBackgroundChoice === 'averageColor') {
+                if (currentImage.complete && currentImage.naturalWidth > 0) {
+                    const avgColor = getAverageColor(currentImage);
+                    applyBackground(dynamicBackgroundLayer, 'averageColor', avgColor);
+                } else {
+                    applyBackground(dynamicBackgroundLayer, 'previewSolid'); // Fallback
+                }
+            } else if (previewBackgroundChoice === 'staticImage') {
+                applyBackground(dynamicBackgroundLayer, 'staticImage', currentPreviewBackgroundPath);
+            } else { // 'solidColor'
+                applyBackground(dynamicBackgroundLayer, 'previewSolid');
+            }
+        }
+
+        /**
+         * Controls the grayscale filter on the background (dynamicBackgroundLayer).
+         * Applies grayscale only if grayscale effect is enabled AND background is 'averageColor' or 'solidColor'.
+         */
+        function updatePreviewBackgroundGrayscaleEffect() {
+            if (isGrayscaleEnabled && (previewBackgroundChoice === 'averageColor' || previewBackgroundChoice === 'solidColor')) {
+                dynamicBackgroundLayer.classList.add('grayscale-active-bg');
+            } else {
+                dynamicBackgroundLayer.classList.remove('grayscale-active-bg');
+            }
+        }
 
         /**
          * Display the main menu interface
@@ -1760,7 +1962,12 @@
             imageDisplayArea.classList.add('hidden'); // Hide image display area
             topRightMenuButtons.classList.remove('hidden'); // Show top-right menu buttons
 
-            applyBackground(currentMainMenuBackgroundPath, false); // Apply main menu background
+            // Clear background from dynamic layer and apply to body
+            dynamicBackgroundLayer.style.backgroundImage = 'none';
+            dynamicBackgroundLayer.style.backgroundColor = 'transparent';
+            dynamicBackgroundLayer.classList.remove('grayscale-active-bg'); // Ensure grayscale is off for this layer
+            updateMainMenuBackground(); // Apply main menu background to body
+
             updateNavigationButtons(); // Update button states
 
             // If a path is brought back from the image library, update the main menu display
@@ -1778,6 +1985,11 @@
                 updatePlaybackImagePool(); // Update the button state for "no folder selected"
             }
             updateMainMenuHintText(); // Update hint text when showing main menu
+
+            // Show traffic lights when in main menu
+            if (window.electronAPI) {
+                window.electronAPI.setTrafficLightVisibility(true);
+            }
         }
 
         /**
@@ -1955,7 +2167,7 @@
 
         /**
          * Display folder browser view and load images and subfolders under the specified path
-         * @param {string} folderPath - 要读取的文件夹路径
+         * @param {string} folderPath - 要读取的文件夹路径。如果为空，则打开文件选择对话框。
          */
         async function showFolderBrowserView(folderPath) {
             if (!folderPath) {
@@ -1980,8 +2192,12 @@
             folderBrowserView.classList.remove('hidden'); // Show image library view
             topRightMenuButtons.classList.remove('hidden'); // Show top-right menu buttons in folder browser view
 
-            applyBackground(currentMainMenuBackgroundPath, false); // Image library view also uses main menu background
-
+            // Ensure the dynamic layer is not showing its background for folder browser
+            dynamicBackgroundLayer.style.backgroundImage = 'none';
+            dynamicBackgroundLayer.style.backgroundColor = 'transparent';
+            dynamicBackgroundLayer.classList.remove('grayscale-active-bg'); // Ensure grayscale is off for this layer
+            updateMainMenuBackground(); // Image library view also uses main menu background (on body)
+            
             currentLoadedFolderPath = folderPath; // Update current loaded folder path
             // Simplify path display, only show the last part of the folder name, but keep full path as tooltip
             const pathParts = folderPath.split(/[/\\]/);
@@ -2029,7 +2245,7 @@
 
 
                 // Sort image files for sequential playback
-                allImageFilesForPlayback.sort((a, b) => naturalSort(a.name, b.name));
+                allImageFilesForPlayback.sort((a, b) => naturalSort(a, b)); // Pass whole object for naturalSort
 
                 // Populate global image data for sketch mode (ONLY images, and sorted)
                 imageFiles = allImageFilesForPlayback.map(file => ({ name: file.name, path: file.originalPath }));
@@ -2040,6 +2256,13 @@
 
                 // Combine all items (directories + sorted images) for pagination display
                 currentFolderItems = directories.concat(allImageFilesForPlayback);
+                currentFolderItems.sort((a,b) => { // Sort all items (folders first, then files)
+                    if (a.type === 'directory' && b.type === 'file') return -1;
+                    if (a.type === 'file' && b.type === 'directory') return 1;
+                    return naturalSort(a,b);
+                });
+
+
                 currentPage = 0; // Reset to first page
                 await renderCurrentPageThumbnails(); // Wait for thumbnails to render including folder completion checks
 
@@ -2056,6 +2279,10 @@
                 folderBrowserInfoMessage.classList.remove('hidden');
                 selectFolderForSketchAndReturnToMenuButton.disabled = true; // Disable on failure
                 await renderCurrentPageThumbnails(); // Update pagination UI for error state
+            }
+            // Show traffic lights when in folder browser
+            if (window.electronAPI) {
+                window.electronAPI.setTrafficLightVisibility(true);
             }
         }
 
@@ -2098,7 +2325,7 @@
             const r = parseInt(hex.slice(1, 3), 16);
             const g = parseInt(hex.slice(3, 5), 16);
             const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            return `rgba(${r},${g},${b},${alpha})`;
         }
 
         /**
@@ -2143,30 +2370,6 @@
         }
 
         /**
-         * Applies background to the body element.
-         * @param {string|null} filePath - Background image file path, or null to use default gradient/color.
-         * @param {boolean} isPreview - True if applying to preview, false for main menu.
-         */
-        function applyBackground(filePath, isPreview = false) {
-            if (filePath) {
-                document.body.style.backgroundImage = `url('file://${filePath}')`;
-                document.body.style.backgroundSize = 'cover';
-                document.body.style.backgroundPosition = 'center center';
-                document.body.style.backgroundRepeat = 'no-repeat';
-                document.body.style.backgroundAttachment = 'fixed';
-                document.body.style.backgroundColor = ''; // Clear solid color if image is set
-            } else {
-                if (isPreview) {
-                    document.body.style.backgroundImage = `none`; // Clear image background
-                    document.body.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--default-preview-bg'); // Use themed default solid color
-                } else {
-                    document.body.style.backgroundImage = `linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end))`; // Use themed default gradient for main menu
-                    document.body.style.backgroundColor = ''; // Clear solid color
-                }
-            }
-        }
-
-        /**
          * Initialization function, loads all saved settings and determines initial view.
          */
         document.addEventListener('DOMContentLoaded', async () => {
@@ -2175,12 +2378,31 @@
                 isLightThemeEnabled = await window.electronAPI.loadSetting('isLightThemeEnabled') ?? false; // Default to dark theme
                 applyTheme(isLightThemeEnabled); // Apply theme immediately
 
-                // Load main menu background image
+                // Load main menu background settings
+                mainMenuBackgroundChoice = await window.electronAPI.loadSetting('mainMenuBackgroundChoice') ?? 'solidColor';
                 currentMainMenuBackgroundPath = await window.electronAPI.loadSetting('mainMenuBackgroundPath') || '';
-                // No need to apply background here, it's handled by applyTheme and showMainMenu
+                
+                mainMenuBackgroundChoiceRadios.forEach(radio => {
+                    if (radio.value === mainMenuBackgroundChoice) {
+                        radio.checked = true;
+                    }
+                });
+                mainMenuStaticImagePathRow.style.display = (mainMenuBackgroundChoice === 'staticImage') ? 'flex' : 'none';
+                mainMenuBackgroundPathDisplay.value = currentMainMenuBackgroundPath || '未选择静态图片';
 
-                // Load preview background image path
-                currentPreviewBackgroundPath = await window.electronAPI.loadSetting('previewBackgroundPath') || '';
+
+                // Load preview background settings
+                previewBackgroundChoice = await window.electronAPI.loadSetting('previewBackgroundChoice') ?? 'solidColor'; // Default to 'solidColor'
+                currentPreviewBackgroundPath = await window.electronAPI.loadSetting('previewBackgroundPath') || ''; // Path for 'staticImage' mode
+
+                previewBackgroundChoiceRadios.forEach(radio => {
+                    if (radio.value === previewBackgroundChoice) {
+                        radio.checked = true;
+                    }
+                });
+                // Initialize visibility of staticImagePathRow
+                staticImagePathRow.style.display = (previewBackgroundChoice === 'staticImage') ? 'flex' : 'none';
+                previewBackgroundPathDisplay.value = currentPreviewBackgroundPath || '未选择静态图片';
                 
                 // Load grid color
                 const savedGridColor = await window.electronAPI.loadSetting('gridColor');
@@ -2236,10 +2458,12 @@
                 // Load random playback setting
                 isRandomPlayback = await window.electronAPI.loadSetting('isRandomPlayback') ?? true; // Default to true if not set
                 randomPlaybackToggle.classList.toggle('active', isRandomPlayback);
+                console.log('Random playback button listener attached. Initial state:', isRandomPlayback); // Listener attachment log
 
                 // Load filter marked setting (for playback)
                 isFilterMarkedEnabled = await window.electronAPI.loadSetting('isFilterMarkedEnabled') ?? true; // Default to true (filter marked)
                 filterMarkedToggle.classList.toggle('active', isFilterMarkedEnabled);
+                console.log('Filter marked button listener attached. Initial state:', isFilterMarkedEnabled); // Listener attachment log
 
                 // Load library filter marked setting
                 isLibraryFilterMarkedEnabled = await window.electronAPI.loadSetting('isLibraryFilterMarkedEnabled') ?? false; // Default to false (show all)
@@ -2265,17 +2489,31 @@
             } else {
                 // If not in Electron environment, use default values and show main menu
                 applyTheme(false); // Default to dark theme
-                currentPreviewBackgroundPath = ''; // Preview background defaults to empty
+                mainMenuBackgroundChoice = 'solidColor'; // Default for non-Electron
+                currentMainMenuBackgroundPath = ''; // Default for non-Electron
+                previewBackgroundChoice = 'solidColor'; // Preview background defaults to empty
+                currentPreviewBackgroundPath = '';
                 gridColorPicker.value = defaultGridColorHex;
                 setGridColor(defaultGridColorHex);
                 gridSizeInput.value = defaultGridSize;
                 setGridSize(defaultGridSize);
                 currentTimeFormat = defaultTimeFormat;
-                timeFormatRadios.forEach(radio => {
-                    if (radio.value === defaultTimeFormat) {
+
+                // Set radio buttons for non-Electron defaults
+                mainMenuBackgroundChoiceRadios.forEach(radio => {
+                    if (radio.value === mainMenuBackgroundChoice) {
                         radio.checked = true;
                     }
                 });
+                previewBackgroundChoiceRadios.forEach(radio => {
+                    if (radio.value === previewBackgroundChoice) {
+                        radio.checked = true;
+                    }
+                });
+
+                mainMenuStaticImagePathRow.style.display = 'none'; // Hide if not Electron
+                staticImagePathRow.style.display = 'none'; // Hide if not Electron
+
                 showMainMenu(); // Show main menu by default in non-Electron environment
             }
 
@@ -2349,6 +2587,11 @@
                 return;
             }
 
+            // Hide traffic lights when starting sketch session
+            if (window.electronAPI) {
+                window.electronAPI.setTrafficLightVisibility(false);
+            }
+
             // Reset image history (should only contain indices from currentPlaybackImageIndexes)
             displayedImageHistory = [];
             historyPointer = -1;
@@ -2360,8 +2603,11 @@
             imageDisplayArea.classList.remove('hidden'); // Show image display area
             topRightMenuButtons.classList.add('hidden'); // Hide top-right menu buttons during playback
             
-            // Apply preview background when entering preview mode
-            applyBackground(currentPreviewBackgroundPath, true);
+            // Clear background from body and apply to dynamic layer
+            document.body.style.backgroundImage = 'none';
+            document.body.style.backgroundColor = 'transparent';
+            updatePreviewBackground(); // Unified background update for dynamicBackgroundLayer
+            updatePreviewBackgroundGrayscaleEffect(); // Ensure grayscale is applied to dynamicBackgroundLayer if enabled
 
             isPlaying = true;
             
@@ -2386,12 +2632,17 @@
          */
         function setPresetTime(time, activeButton = null) {
             displayTime = time;
-            // Update input display: show "∞" for infinite, otherwise the number
-            displayTimeInput.value = (time === Infinity) ? '∞' : time; 
             
-            // Disable number input if infinite time is selected
-            displayTimeInput.disabled = (time === Infinity);
-
+            // When infinite time is selected, disable the number input and clear its value
+            // The '∞' symbol will be shown in the countdown display instead.
+            if (time === Infinity) {
+                displayTimeInput.value = ''; // Clear value
+                displayTimeInput.disabled = true;
+            } else {
+                displayTimeInput.value = time;
+                displayTimeInput.disabled = false;
+            }
+            
             updatePresetTimeButtons(time, activeButton);
             updateMainMenuHintText(); // Update hint text when display time changes
         }
@@ -2420,6 +2671,7 @@
                 // and activate it.
                 let matched = false;
                 presetButtons.forEach(btn => {
+                    // Safely parse textContent, handling '∞'
                     const presetValue = (btn.id === 'presetInfiniteTime') ? Infinity : parseInt(btn.textContent, 10);
                     if (currentDisplayTimeValue === presetValue) {
                         btn.classList.add('active');
@@ -2429,26 +2681,24 @@
             }
 
             // Ensure the number input field is enabled/disabled correctly based on whether 'Infinity' is selected.
+            // This is also handled in setPresetTime, but explicitly setting it here for robustness
             displayTimeInput.disabled = (currentDisplayTimeValue === Infinity);
         }
 
         // Input event listener for displayTimeInput
         displayTimeInput.addEventListener('input', (event) => {
             const inputValue = event.target.value;
-            if (inputValue === '∞') {
-                displayTime = Infinity;
-            } else {
-                const numValue = parseInt(inputValue, 10);
-                // Only update displayTime if it's a valid number greater than 0
-                if (!isNaN(numValue) && numValue >= 1) { 
-                    displayTime = numValue;
-                } else {
-                    // If invalid input (e.g., empty or text), ensure displayTime reflects invalid state
-                    // or reset to a default/previous valid value if desired.
-                }
+            // When user types in the number input, it's always a finite number.
+            const numValue = parseInt(inputValue, 10);
+            if (!isNaN(numValue) && numValue >= 1) { 
+                displayTime = numValue;
+            } else if (inputValue === '') { // Allow empty input temporarily (e.g., user is typing)
+                displayTime = NaN; // Set to NaN or some indicator of invalid state
             }
-            // Always update preset buttons and hint text when input changes,
-            // so active state and messages are current.
+            // If the input is not a valid number, we don't update displayTime,
+            // so the last valid displayTime remains, or it becomes NaN.
+            // The preset buttons logic will handle their activation based on the actual displayTime.
+
             updatePresetTimeButtons(displayTime); 
             updateMainMenuHintText(); 
         });
@@ -2472,19 +2722,25 @@
          * Toggles random/sequential playback.
          */
         randomPlaybackToggle.addEventListener('click', async () => {
+            console.log('Random playback button clicked!'); // Log click event
             isRandomPlayback = !isRandomPlayback;
             randomPlaybackToggle.classList.toggle('active', isRandomPlayback);
+            console.log('isRandomPlayback state after toggle:', isRandomPlayback); // Log new state
             if (window.electronAPI) {
                 await window.electronAPI.saveSetting('isRandomPlayback', isRandomPlayback);
             }
+            // If in playback mode, changing this will affect the NEXT image's selection.
+            // No need to stop and restart immediately, as advanceImage already checks isRandomPlayback.
         });
 
         /**
          * Toggles filtering of marked images (for playback).
          */
         filterMarkedToggle.addEventListener('click', async () => {
+            console.log('Filter marked button clicked!'); // Log click event
             isFilterMarkedEnabled = !isFilterMarkedEnabled;
             filterMarkedToggle.classList.toggle('active', isFilterMarkedEnabled);
+            console.log('isFilterMarkedEnabled state after toggle:', isFilterMarkedEnabled); // Log new state
             if (window.electronAPI) {
                 await window.electronAPI.saveSetting('isFilterMarkedEnabled', isFilterMarkedEnabled);
             }
@@ -2507,19 +2763,43 @@
             applyTheme(!isLightThemeEnabled); // Toggle the theme
         });
 
+        // Event listener for main menu background choice radios
+        mainMenuBackgroundChoiceRadios.forEach(radio => {
+            radio.addEventListener('change', async (event) => {
+                mainMenuBackgroundChoice = event.target.value;
+                if (window.electronAPI) {
+                    await window.electronAPI.saveSetting('mainMenuBackgroundChoice', mainMenuBackgroundChoice);
+                }
+                mainMenuStaticImagePathRow.style.display = (mainMenuBackgroundChoice === 'staticImage') ? 'flex' : 'none';
+                // Only update background if currently in main menu or folder browser mode
+                if (controlsMenu.classList.contains('hidden') && folderBrowserView.classList.contains('hidden')) {
+                    // Is in image display area, do nothing
+                } else { 
+                    updateMainMenuBackground();
+                }
+                if (mainMenuBackgroundChoice === 'staticImage') {
+                    mainMenuBackgroundPathDisplay.value = currentMainMenuBackgroundPath || '未选择静态图片';
+                }
+            });
+        });
+
         /**
-         * Changes the main menu background image.
+         * Handles selecting a static image for main menu background.
          */
-        changeMainMenuBackgroundButton.addEventListener('click', async () => {
+        selectMainMenuImageButton.addEventListener('click', async () => {
             if (window.electronAPI) {
                 const filePath = await window.electronAPI.openFileDialog();
                 if (filePath) {
                     currentMainMenuBackgroundPath = filePath;
-                    applyBackground(currentMainMenuBackgroundPath, false); // Apply to main menu
+                    mainMenuBackgroundPathDisplay.value = filePath;
                     await window.electronAPI.saveSetting('mainMenuBackgroundPath', currentMainMenuBackgroundPath);
-                    showCustomAlert('主菜单背景图片已更新并保存。', '背景设置');
-                } else {
-                    // User canceled selection, do nothing (keep silent)
+                    // Only update background if currently in main menu or folder browser mode
+                    if (controlsMenu.classList.contains('hidden') && folderBrowserView.classList.contains('hidden')) {
+                        // Is in image display area, do nothing
+                    } else { 
+                        updateMainMenuBackground();
+                    }
+                    showCustomAlert('主菜单静态图片背景已更新并保存。', '背景设置');
                 }
             } else {
                 showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
@@ -2527,33 +2807,67 @@
         });
 
         /**
-         * Resets the main menu background to default gradient.
+         * Clears the selected static image for main menu background.
          */
-        resetMainMenuBackgroundButton.addEventListener('click', async () => {
-            currentMainMenuBackgroundPath = ''; // Clear path
-            applyBackground(currentMainMenuBackgroundPath, false); // Apply default gradient
+        clearMainMenuImageButton.addEventListener('click', async () => {
+            currentMainMenuBackgroundPath = '';
+            mainMenuBackgroundPathDisplay.value = '未选择静态图片';
             if (window.electronAPI) {
-                await window.electronAPI.saveSetting('mainMenuBackgroundPath', ''); 
+                await window.electronAPI.saveSetting('mainMenuBackgroundPath', '');
             }
-            showCustomAlert('主菜单背景已重置为默认渐变。', '背景设置');
+            // Only update background if currently in main menu or folder browser mode
+            if (controlsMenu.classList.contains('hidden') && folderBrowserView.classList.contains('hidden')) {
+                // Is in image display area, do nothing
+            } else { 
+                updateMainMenuBackground();
+            }
+            showCustomAlert('主菜单静态图片背景已清除，将显示纯色背景。', '背景设置');
+        });
+
+
+        // Event listener for preview background choice radios
+        previewBackgroundChoiceRadios.forEach(radio => {
+            radio.addEventListener('change', async (event) => {
+                previewBackgroundChoice = event.target.value;
+                if (window.electronAPI) {
+                    await window.electronAPI.saveSetting('previewBackgroundChoice', previewBackgroundChoice);
+                }
+                // Show/hide staticImagePathRow based on selection
+                staticImagePathRow.style.display = (previewBackgroundChoice === 'staticImage') ? 'flex' : 'none';
+
+                // If currently in preview mode, immediately update background based on new choice
+                if (!imageDisplayArea.classList.contains('hidden')) {
+                    updatePreviewBackground(); // This will handle applying solid, static or average color background
+                    updatePreviewBackgroundGrayscaleEffect(); // Also update grayscale effect for background
+                }
+                
+                // If switching away from staticImage, clear the path in memory (but not from storage immediately)
+                // This ensures "纯色" behaves as expected and "平均色" doesn't try to use an old path.
+                if (previewBackgroundChoice !== 'staticImage') {
+                    // currentPreviewBackgroundPath = ''; // Don't clear from memory, keep it for next time user selects static image
+                } else {
+                    // When switching TO staticImage, ensure path display is correct
+                    previewBackgroundPathDisplay.value = currentPreviewBackgroundPath || '未选择静态图片';
+                }
+            });
         });
 
         /**
-         * Changes the image preview background image.
+         * Handles selecting a static image for preview background.
          */
-        changePreviewBackgroundButton.addEventListener('click', async () => {
+        selectStaticImageButton.addEventListener('click', async () => {
             if (window.electronAPI) {
                 const filePath = await window.electronAPI.openFileDialog();
                 if (filePath) {
                     currentPreviewBackgroundPath = filePath;
-                    // If currently in preview mode, apply immediately
-                    if (!imageDisplayArea.classList.contains('hidden')) {
-                        applyBackground(currentPreviewBackgroundPath, true); // Apply to preview
-                    }
+                    previewBackgroundPathDisplay.value = filePath;
                     await window.electronAPI.saveSetting('previewBackgroundPath', currentPreviewBackgroundPath);
-                    showCustomAlert('图片预览背景已更新并保存。', '背景设置');
+                    if (!imageDisplayArea.classList.contains('hidden') && previewBackgroundChoice === 'staticImage') {
+                        applyBackground(dynamicBackgroundLayer, 'staticImage', currentPreviewBackgroundPath);
+                    }
+                    showCustomAlert('静态图片背景已更新并保存。', '背景设置');
                 } else {
-                    // User canceled selection, do nothing (keep silent)
+                    // User canceled selection, do nothing
                 }
             } else {
                 showCustomAlert('此功能仅在打包为桌面应用后可用。', '提示');
@@ -2561,19 +2875,21 @@
         });
 
         /**
-         * Resets the image preview background to default solid color.
+         * Clears the selected static image for preview background.
+         * This effectively makes it "pure color" again (default themed solid).
          */
-        resetPreviewBackgroundButton.addEventListener('click', async () => {
-            currentPreviewBackgroundPath = ''; // Clear path
-            // If currently in preview mode, apply immediately
-            if (!imageDisplayArea.classList.contains('hidden')) {
-                applyBackground(currentPreviewBackgroundPath, true); // Apply default solid color
-            }
+        clearStaticImageButton.addEventListener('click', async () => {
+            currentPreviewBackgroundPath = '';
+            previewBackgroundPathDisplay.value = '未选择静态图片';
             if (window.electronAPI) {
-                await window.electronAPI.saveSetting('previewBackgroundPath', ''); 
+                await window.electronAPI.saveSetting('previewBackgroundPath', '');
             }
-            showCustomAlert('图片预览背景已重置为默认纯色。', '背景设置');
+            if (!imageDisplayArea.classList.contains('hidden') && previewBackgroundChoice === 'staticImage') {
+                applyBackground(dynamicBackgroundLayer, 'previewSolid'); // Apply default solid color
+            }
+            showCustomAlert('静态图片背景已清除，将显示纯色背景。', '背景设置');
         });
+
 
         /**
          * Set default image folder path
@@ -2672,6 +2988,7 @@
             currentImage.classList.toggle('grayscale-effect', isGrayscaleEnabled);
             grayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
             overlayGrayscaleToggle.classList.toggle('active', isGrayscaleEnabled);
+            updatePreviewBackgroundGrayscaleEffect(); // <--- Update background grayscale
         }
         grayscaleToggle.addEventListener('click', toggleGrayscaleEffect);
         overlayGrayscaleToggle.addEventListener('click', toggleGrayscaleEffect);
@@ -2685,7 +3002,7 @@
             gridToggle.classList.toggle('active', isGridEnabled);
             overlayGridToggle.classList.toggle('active', isGridEnabled);
             if (isGridEnabled) {
-                if (currentImage.complete) { 
+                if (currentImage.complete && currentImage.naturalWidth > 0) { // Check naturalWidth for fully loaded
                     drawGrid();
                 }
             } else {
@@ -2826,7 +3143,7 @@
                 currentPlaybackImageIndexes.push(i); // Add the raw index to the eligible list
             }
             // Sort the eligible indices based on the original file names for sequential playback consistency
-            currentPlaybackImageIndexes.sort((a, b) => naturalSort(imageFiles[a].name, imageFiles[b].name));
+            currentPlaybackImageIndexes.sort((a, b) => naturalSort(imageFiles[a], imageFiles[b])); // Pass whole object for naturalSort
             
             // Re-enable/disable start button based on the filtered list length
             startButton.disabled = (currentPlaybackImageIndexes.length === 0);
@@ -2848,6 +3165,7 @@
             } else {
                 startButton.setAttribute('data-tooltip', '开始速写');
             }
+            console.log(`Playback image pool updated. Filtered images count: ${currentPlaybackImageIndexes.length}. Total images: ${imageUrls.length}`);
         }
 
         /**
@@ -2966,8 +3284,9 @@
                         // Or Case 2: We are at the end of the history.
                         // Find the next image in the *current* sorted playback pool.
                         let nextPlaybackIndex = (currentPlaybackIndexInPool + 1) % currentPlaybackImageIndexes.length;
-                        newIndexRaw = currentPlaybackImageIndexes[nextPlaybackIndex];
-
+                        // If we are at the end of the filtered list, wrap around to the beginning for sequential
+                        newIndexRaw = currentPlaybackImageIndexes[nextPlaybackIndex % currentPlaybackImageIndexes.length];
+                        
                         // If current image was not in pool, or we're at end of history,
                         // clear future history and add the new image
                         if (historyPointer < displayedImageHistory.length -1) {
@@ -3005,7 +3324,7 @@
 
             currentImageIndex = newIndexRaw;
             currentImage.src = imageUrls[currentImageIndex];
-            applyImageEffects();
+            updateImageDisplay(); // <--- Call this here to handle effects and average background
             remainingTime = displayTime; // remainingTime will be Infinity if displayTime is Infinity
             updateCountdownDisplay();
             updateNavigationButtons();
@@ -3028,7 +3347,7 @@
                 historyPointer--;
                 currentImageIndex = displayedImageHistory[historyPointer];
                 currentImage.src = imageUrls[currentImageIndex];
-                applyImageEffects();
+                updateImageDisplay(); // <--- Call this here to handle effects and average background
                 remainingTime = displayTime; // Reset time for a new image from history (can be Infinity)
                 updateCountdownDisplay();
                 updateMarkingUI(); // New: Update marking UI after image changes
@@ -3123,8 +3442,8 @@
          */
         function updateCountdownDisplay() {
             if (displayTime === Infinity) {
-                countdownElement.textContent = '♾️'; // Display infinity symbol for infinite time
-            } else if (currentTimeFormat === 'hours:minutes:seconds') { // Updated to handle hours
+                countdownElement.textContent = ''; // Empty string for infinite time
+            } else if (currentTimeFormat === 'hours:minutes:seconds' && remainingTime >= 60) { // If time is 60s or more, use H:M:S
                 const hours = Math.floor(remainingTime / 3600);
                 const minutes = Math.floor((remainingTime % 3600) / 60);
                 const seconds = remainingTime % 60;
@@ -3134,8 +3453,8 @@
                 }
                 display += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 countdownElement.textContent = display;
-            } else { // 'seconds'
-                countdownElement.textContent = `${remainingTime}s`;
+            } else { // 'seconds' format OR 'hours:minutes:seconds' but < 60s
+                countdownElement.textContent = `${remainingTime}`;
             }
         }
 
@@ -3146,9 +3465,50 @@
             currentImage.classList.remove('mirror-effect', 'grayscale-effect');
             if (isMirrorEnabled) currentImage.classList.add('mirror-effect');
             if (isGrayscaleEnabled) currentImage.classList.add('grayscale-effect');
+            // Grid drawing is now handled in updateImageDisplay
+        }
+
+        /**
+         * Updates the current image display, applying effects and calculating average background color.
+         */
+        function updateImageDisplay() {
+            applyImageEffects(); // Apply mirror/grayscale
+
+            // Clear previous onload/onerror to prevent multiple calls or outdated contexts
+            // This is important to prevent "图片加载错误" when clearing src on stopGame()
+            currentImage.onload = null;
+            currentImage.onerror = null;
+
+            // This will trigger after the image has loaded, ensuring its pixel data is available
             currentImage.onload = () => {
                 if (isGridEnabled) {
                     drawGrid();
+                }
+                updatePreviewBackground(); // Unified background update after image loads
+                updatePreviewBackgroundGrayscaleEffect(); // <--- Apply grayscale to background after it's set
+            };
+            // Handle cases where the image might already be cached and onload doesn't fire
+            if (currentImage.complete && currentImage.naturalWidth > 0) { // Check naturalWidth for fully loaded
+                currentImage.onload(); // Manually trigger if already complete
+            } else {
+                // If not complete, ensure initial background is set
+                updatePreviewBackground();
+                updatePreviewBackgroundGrayscaleEffect(); // <--- Apply grayscale to background if image not loaded yet
+            }
+
+            // Handle image loading errors (e.g., corrupted file)
+            currentImage.onerror = () => {
+                // Only show alert and advance if we are actually playing and expecting an image
+                // Check for valid image URL patterns to avoid false positives from clearing src
+                if (isPlaying && imageFiles[currentImageIndex] && currentImage.src.startsWith('file://') && currentImage.src.match(/\.(jpg|jpeg|png|gif|webp|bmp|tiff|svg)$/i)) {
+                    console.error(`Error loading image: ${imageFiles[currentImageIndex]?.name || 'Unknown File Path'}: ${currentImage.src}`);
+                    showCustomAlert(`无法加载图片：${imageFiles[currentImageIndex]?.name || '未知文件'}。已跳过。`, '图片加载错误');
+                    // Skip to next image automatically if there's a loading error
+                    // Use a short timeout to prevent rapid recursion if many images are broken
+                    setTimeout(() => advanceImage(false, false), 500); 
+                } else {
+                    // This is likely a non-critical error (e.g., src cleared on exit, or non-image URL)
+                    // console.warn(`Non-critical image loading issue or src cleared: ${currentImage.src}`); // For debugging non-critical cases
                 }
             };
         }
@@ -3212,7 +3572,7 @@
             for (let y = 0; y < gridCanvas.height; y += currentGridSize) { 
                 ctx.beginPath();
                 ctx.moveTo(0, y);
-                ctx.lineTo(0, y);
+                ctx.lineTo(gridCanvas.width, y); // Fix: line should go full width
                 ctx.stroke();
             }
         }
@@ -3226,19 +3586,32 @@
             isPaused = false; // Reset pause state when returning to menu
             pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
 
+            // Crucial: Clear the image source and remove event listeners FIRST
+            currentImage.src = ''; 
+            currentImage.onload = null; // Remove onload to prevent it firing when src is cleared
+            currentImage.onerror = null; // Remove onerror to prevent false alarms
+
             imageDisplayArea.classList.add('hidden'); 
             controlsMenu.classList.remove('hidden'); 
             folderBrowserView.classList.add('hidden'); // Ensure image library view is also hidden
             topRightMenuButtons.classList.remove('hidden'); // Show top-right menu buttons when returning to main menu
-            currentImage.src = ''; 
             console.log('Sketch session stopped.');
 
-            // Restore main menu background
-            applyBackground(currentMainMenuBackgroundPath, false);
+            // Clear background from dynamic layer and apply main menu background to body
+            dynamicBackgroundLayer.style.backgroundImage = 'none';
+            dynamicBackgroundLayer.style.backgroundColor = 'transparent';
+            dynamicBackgroundLayer.classList.remove('grayscale-active-bg'); // Ensure grayscale is off for this layer
+            updateMainMenuBackground(); // Restore main menu background to body
+
             updateNavigationButtons(); 
             updateMarkingUI(); // Reset marking UI when returning to menu
             updatePlaybackImagePool(); // Re-evaluate button tooltips on main menu
             updateMainMenuHintText(); // Update hint text when returning to main menu
+
+            // Show traffic lights when returning to main menu
+            if (window.electronAPI) {
+                window.electronAPI.setTrafficLightVisibility(true);
+            }
         }
 
         // Main menu return button

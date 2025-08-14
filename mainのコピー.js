@@ -76,10 +76,9 @@ function createWindow() {
         y: savedBounds.y, // 使用上次保存的 Y 坐标
         minWidth: 300, // 最小宽度已调整
         minHeight: 200, // 最小高度已调整
-        frame: false, // 隐藏原生标题栏和边框
+        frame: false, // 隐藏原生标题栏，实现无边框窗口
         transparent: true, // 使窗口背景透明，以便 CSS 背景生效
-        titleBarStyle: 'hidden', // macOS 上的隐藏标题栏样式，进一步隐藏标题栏 UI
-        // 已移除 trafficLightPosition: { x: -100, y: 0 } 以允许交通灯正常显示
+        titleBarStyle: 'hidden', // macOS 上的隐藏标题栏样式
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -108,10 +107,6 @@ function createWindow() {
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send('always-on-top-status', initialAlwaysOnTop);
             }
-        }
-        // 在窗口首次显示时（通常是主菜单或文件夹视图），确保交通灯可见
-        if (process.platform === 'darwin') { // 仅在 macOS 上执行
-            mainWindow.setWindowButtonVisibility(true);
         }
     });
 
@@ -151,22 +146,9 @@ ipcMain.on('set-always-on-top', (event, alwaysOnTop) => {
         // 更新置顶状态，并为 macOS 确保在全屏模式下也可见
         mainWindow.setAlwaysOnTop(alwaysOnTop, { visibleOnFullScreen: true });
         // 回复置顶状态给渲染进程，以便同步 UI 按钮
-        event.sender.send('always-on-top-status', mainWindow.isAlwaysOnTop());
+        event.sender.send('always-on-top-status', alwaysOnTop);
     }
 });
-
-/**
- * IPC 通道：设置 macOS 窗口交通灯按钮的可见性。
- * 此方法仅在 macOS 上有效。
- * @param {Event} event - IPC 事件对象。
- * @param {boolean} visible - 是否可见。
- */
-ipcMain.on('set-traffic-light-visibility', (event, visible) => {
-    if (process.platform === 'darwin' && mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.setWindowButtonVisibility(visible);
-    }
-});
-
 
 /**
  * IPC 通道：在 Finder 中打开文件并选中
