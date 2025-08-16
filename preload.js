@@ -97,5 +97,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
      * 调用主进程设置 macOS 窗口交通灯按钮的可见性。
      * @param {boolean} visible - 是否可见。
      */
-    setTrafficLightVisibility: (visible) => ipcRenderer.send('set-traffic-light-visibility', visible)
+    setTrafficLightVisibility: (visible) => ipcRenderer.send('set-traffic-light-visibility', visible),
+
+    /**
+     * 调用主进程关闭当前窗口。
+     */
+    closeCurrentWindow: () => ipcRenderer.send('close-current-window'),
+
+    /**
+     * 调用主进程打开外部链接。
+     * @param {string} url - 要打开的 URL。
+     * @returns {Promise<{success: boolean, message?: string}>} - 操作结果。
+     */
+    openExternalLink: (url) => ipcRenderer.invoke('open-external-link', url)
 });

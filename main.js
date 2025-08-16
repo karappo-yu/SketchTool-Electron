@@ -1,9 +1,12 @@
 // main.js - Electron 主进程文件
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron'); // 引入 Menu 模块
 const path = require('path');
 const fs = require('fs'); // 引入 Node.js 的 fs 模块
 const Store = require('electron-store'); // 引入 electron-store
+
+// 设置应用程序的名称，这会影响 macOS 菜单栏中显示的名称（以及 about 菜单项）
+app.name = 'Cosmos';
 
 // 初始化存储实例，并设置默认的窗口边界和默认图片文件夹路径
 const store = new Store({
@@ -23,11 +26,14 @@ const store = new Store({
         isLibraryFilterMarkedEnabled: false, // 新增：默认图库不过滤已标记图片
         isFilterMarkedEnabled: true, // 新增：默认播放时过滤已标记图片
         isLightThemeEnabled: false, // 新增：默认深色主题
-        imageMarks: {} // 用于存储图片标记的数据结构
+        isCountdownHidden: false, // 新增：默认显示倒计时
+        imageMarks: {}, // 用于存储图片标记的数据结构
+        startupMode: 'lastUsedPath' // NEW: 默认启动模式为“上次使用的路径”
     }
 });
 
 let mainWindow;
+// let aboutWindow = null; // 用于存储关于窗口的引用 - 已移除
 
 // 定义速写日志文件的路径
 const SKETCH_LOG_FILE = path.join(app.getPath('userData'), 'sketch_log.txt');
@@ -124,8 +130,113 @@ function createWindow() {
     });
 }
 
+// /**
+//  * 打开“关于 Cosmos”窗口。 - 已移除
+//  */
+// function openAboutWindow() {
+//     // 如果“关于”窗口已经存在且未被销毁，则聚焦它
+//     if (aboutWindow && !aboutWindow.isDestroyed()) {
+//         aboutWindow.focus();
+//         return;
+//     }
+
+//     aboutWindow = new BrowserWindow({
+//         width: 350, // 较小的固定宽度，更像实用工具
+//         height: 200, // 较小的固定高度
+//         resizable: false, // 不可调整大小
+//         minimizable: false, // 不可最小化
+//         maximizable: false, // 不可最大化
+//         fullscreenable: false, // 不可全屏
+//         show: false, // 准备好之前不显示
+//         frame: true, // 使用原生窗口框架
+//         transparent: false, // 不透明背景
+//         titleBarStyle: 'default', // macOS 上的默认标题栏样式 (显示交通灯和标题)
+//         center: true, // 窗口居中显示
+//         webPreferences: {
+//             preload: path.join(__dirname, 'preload.js'),
+//             contextIsolation: true,
+//             nodeIntegration: false
+//         }
+//     });
+
+//     aboutWindow.loadFile(path.join(__dirname, 'about.html'));
+
+//     aboutWindow.once('ready-to-show', () => {
+//         aboutWindow.show();
+//     });
+
+//     // 处理窗口关闭事件，以便垃圾回收
+//     aboutWindow.on('closed', () => {
+//         aboutWindow = null;
+//     });
+// }
+
+
 // Electron 应用准备就绪时创建窗口
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    createWindow();
+
+    // 为 macOS 设置应用程序菜单
+    if (process.platform === 'darwin') {
+        const template = [
+            {
+                label: app.name, // 使用 app.name 作为应用程序菜单的标签
+                submenu: [
+                    {
+                        label: `关于 ${app.name}`, // "关于 Cosmos"
+                        // click() { openAboutWindow(); } // 已修改：直接调用 app.showAboutPanel()
+                        click() {
+                            app.setAboutPanelOptions({
+                                applicationName: app.name,
+                                applicationVersion: app.getVersion(),
+                                copyright: '© 2024 Cosmos. All rights reserved.', // 可以根据需要修改版权信息
+                                credits: '由 Electron 构建', // 默认信息
+                                website: 'https://github.com/karappo-yu/SketchTool-Electron' // 添加您的 GitHub 地址
+                            });
+                            app.showAboutPanel();
+                        }
+                    },
+                    { type: 'separator' }, // 分隔线
+                    { role: 'services', submenu: [] }, // 服务菜单
+                    { type: 'separator' },
+                    { role: 'hide', label: `隐藏 ${app.name}` }, // 隐藏应用程序
+                    { role: 'hideOthers', label: '隐藏其他' }, // 隐藏其他应用程序
+                    { role: 'unhide', label: '全部显示' }, // 显示所有应用程序
+                    { type: 'separator' },
+                    { role: 'quit', label: `退出 ${app.name}` } // 退出应用程序
+                ]
+            },
+            {
+                label: '编辑',
+                submenu: [
+                    { role: 'undo', label: '撤销' },
+                    { role: 'redo', label: '重做' },
+                    { type: 'separator' },
+                    { role: 'cut', label: '剪切' },
+                    { role: 'copy', label: '复制' },
+                    { role: 'paste', label: '粘贴' },
+                    { role: 'selectAll', label: '全选' }
+                ]
+            },
+            {
+                label: '窗口',
+                submenu: [
+                    { role: 'minimize', label: '最小化' },
+                    { role: 'zoom', label: '缩放' },
+                    { type: 'separator' },
+                    { role: 'front', label: '前置所有窗口' } // 将应用程序窗口带到前台
+                ]
+            }
+        ];
+
+        const menu = Menu.buildFromTemplate(template);
+        Menu.setApplicationMenu(menu);
+    } else {
+        // 对于 Windows/Linux，如果不需要显示菜单栏，可以设置为 null
+        // 否则，可以在这里定义一个针对这些平台的菜单
+        Menu.setApplicationMenu(null);
+    }
+});
 
 // 当所有窗口都关闭时退出应用 (macOS 除外)
 app.on('window-all-closed', () => {
@@ -241,6 +352,7 @@ ipcMain.handle('open-folder-dialog', async (event, currentPath) => {
 
 /**
  * IPC 通道：读取指定文件夹内的图片文件和子文件夹。
+ * 已修改：增加逻辑以过滤掉以点号（.）开头的隐藏文件夹。
  * @param {Event} event - IPC 事件对象。
  * @param {string} folderPath - 要读取的文件夹路径。
  * @returns {Promise<Array<Object>>} - 包含文件和文件夹信息的数组。
@@ -252,6 +364,11 @@ ipcMain.handle('read-folder-images', async (event, folderPath) => {
         // 使用 withFileTypes: true 来获取 Dirent 对象，这样可以直接访问 .name 和 .isDirectory() / .isFile()
         const items = await fs.promises.readdir(folderPath, { withFileTypes: true });
         for (const item of items) {
+            // 过滤掉以点号 '.' 开头的文件夹（通常是隐藏文件夹，例如 .git, .vscode 等）
+            if (item.isDirectory() && item.name.startsWith('.')) {
+                continue; // 跳过此隐藏文件夹
+            }
+
             const itemPath = path.join(folderPath, item.name); 
             
             if (item.isDirectory()) { 
@@ -399,3 +516,31 @@ ipcMain.handle('open-sketch-log', async (event) => {
         return { success: false, message: error.message };
     }
 });
+
+// /**
+//  * IPC 通道：关闭发送此消息的窗口。 - 已移除
+//  * @param {Event} event - IPC 事件对象。
+//  */
+// ipcMain.on('close-current-window', (event) => {
+//     const webContents = event.sender;
+//     const win = BrowserWindow.fromWebContents(webContents);
+//     if (win) {
+//         win.close();
+//     }
+// });
+
+// /**
+//  * IPC 通道：打开外部链接。 - 已移除
+//  * @param {Event} event - IPC 事件对象。
+//  * @param {string} url - 要打开的 URL。
+//  * @returns {Promise<Object>} - 成功或失败状态。
+//  */
+// ipcMain.handle('open-external-link', async (event, url) => {
+//     try {
+//         await shell.openExternal(url);
+//         return { success: true };
+//     } catch (error) {
+//         console.error('Failed to open external link:', error);
+//         return { success: false, message: error.message };
+//     }
+// });

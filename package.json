@@ -1,6 +1,6 @@
 {
-  "name": "sketch-tool-app",
-  "version": "1.0.0",
+  "name": "cosmos",
+  "version": "1.4.2",
   "description": "A time-limited sketch tool built with Electron with advanced features",
   "main": "main.js",
   "scripts": {
