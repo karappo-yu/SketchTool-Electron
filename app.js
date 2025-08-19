@@ -15,10 +15,10 @@ const mainMenuHintText = document.getElementById('mainMenuHintText'); // New: Ma
 // Preset time buttons and their container
 const presetTimeButtonsContainer = document.getElementById('preset-time-buttons');
 const preset30sButton = document.getElementById('preset30s');
-const preset60sButton = document.getElementById('preset60s'); 
-const preset120sButton = document.getElementById('preset120s');
-const preset300sButton = document.getElementById('preset300s'); 
-const preset600sButton = document.getElementById('preset600s'); 
+const preset60sButton = document.getElementById('preset60s');
+const preset120sButton = document = document.getElementById('preset120s');
+const preset300sButton = document.getElementById('preset300s');
+const preset600sButton = document.getElementById('preset600s');
 const presetInfiniteTime = document.getElementById('presetInfiniteTime'); // NEW: Infinite time option
 const presetTimes = [30, 60, 120, 300, 600, Infinity]; // Array of preset times, including Infinity
 
@@ -26,31 +26,31 @@ const imageDisplayArea = document.getElementById('image-display-area');
 const currentImage = document.getElementById('current-image');
 const countdownElement = document.getElementById('countdown');
 const gridCanvas = document.getElementById('grid-canvas');
-const ctx = gridCanvas.getContext('2d'); 
+const ctx = gridCanvas.getContext('2d');
 
 // Right floating control menu and hover area
 const rightControlsHoverZone = document.getElementById('right-controls-hover-hoverZone');
 const overlayControls = document.getElementById('overlay-controls');
-const openInFinderButton = document.getElementById('openInFinderButton'); 
+const openInFinderButton = document.getElementById('openInFinderButton');
 
 // New: Mark Star Button
-const markStarButton = document.getElementById('markStarButton'); 
+const markStarButton = document.getElementById('markStarButton');
 
 const overlayMirrorToggle = document.getElementById('overlayMirrorToggle');
 const overlayGrayscaleToggle = document.getElementById('overlayGrayscaleToggle');
 const overlayGridToggle = document.getElementById('overlayGridToggle');
-const toggleAlwaysOnTopButton = document.getElementById('toggleAlwaysOnTopButton'); 
+const toggleAlwaysOnTopButton = document.getElementById('toggleAlwaysOnTopButton');
 const backToMenuButton = document.getElementById('backToMenuButton');
 
 // Image bottom navigation buttons and hover area
 const bottomControlsHoverZone = document.getElementById('bottom-controls-hover-zone');
-const imageNavigationControls = document.getElementById('image-navigation-controls'); 
-const prevImageButton = document.getElementById('prevImageButton'); 
+const imageNavigationControls = document.getElementById('image-navigation-controls');
+const prevImageButton = document.getElementById('prevImageButton');
 const nextImageButton = document.getElementById('nextImageButton');
-const pausePlayButton = document.getElementById('pausePlayButton'); 
+const pausePlayButton = document.getElementById('pausePlayButton');
 
 // Settings modal related elements
-const settingsButton = document.getElementById('settings-button'); 
+const settingsButton = document.getElementById('settings-button');
 const randomPlaybackToggle = document.getElementById('random-playback-toggle'); // New random/sequential playback button
 // New: Filter Marked Images Toggle
 const filterMarkedToggle = document.getElementById('filter-marked-toggle');
@@ -76,10 +76,10 @@ const previewBackgroundPathDisplay = document.getElementById('previewBackgroundP
 const selectStaticImageButton = document.getElementById('selectStaticImageButton');
 const clearStaticImageButton = document.getElementById('clearStaticImageButton');
 
-const gridColorPicker = document.getElementById('gridColorPicker'); 
+const gridColorPicker = document.getElementById('gridColorPicker');
 const resetGridSettingsButton = document.getElementById('resetGridSettingsButton'); // Combined reset button
-const gridSizeInput = document.getElementById('gridSizeInput'); 
-const timeFormatRadios = document.querySelectorAll('input[name="timeFormat"]'); 
+const gridSizeInput = document.getElementById('gridSizeInput');
+const timeFormatRadios = document.querySelectorAll('input[name="timeFormat"]');
 const countdownVisibilityRadios = document.querySelectorAll('input[name="countdownVisibility"]'); // NEW: Countdown visibility radios
 const settingsModalThemeToggle = document.getElementById('settings-modal-theme-toggle'); // New theme toggle button inside settings modal
 const openSketchLogButton = document.getElementById('openSketchLogButton'); // New: Open Sketch Log Button
@@ -97,11 +97,11 @@ const startupModeChoiceRadios = document.querySelectorAll('input[name="startupMo
 const folderBrowserView = document.getElementById('folder-browser-view');
 const currentLibraryPathDisplay = document.getElementById('current-library-path');
 const thumbnailsGridContainer = document.getElementById('thumbnails-grid-container');
-const selectFolderForSketchAndReturnToMenuButton = document.getElementById('selectFolderForSketchAndReturnToMenuButton'); 
+const selectFolderForSketchAndReturnToMenuButton = document.getElementById('selectFolderForSketchAndReturnToMenuButton');
 const selectNewFolderFromBrowserButton = document.getElementById('selectNewFolderFromBrowserButton');
 // const backFromBrowserToMenuButton = document.getElementById('backFromBrowserToMenuButton'); // Removed, replaced by closeFolderBrowserButton
-const folderBrowserInfoMessage = document.getElementById('folderBrowserInfoMessage'); 
-const goUpFolderButton = document.getElementById('goUpFolderButton'); 
+const folderBrowserInfoMessage = document.getElementById('folderBrowserInfoMessage');
+const goUpFolderButton = document.getElementById('goUpFolderButton');
 // New: Library Filter Marked Toggle
 const libraryFilterMarkedToggle = document.getElementById('libraryFilterMarkedToggle');
 // NEW: Close button for Folder Browser
@@ -121,13 +121,17 @@ const hiddenImageCtx = hiddenImageCanvas.getContext('2d', { willReadFrequently: 
 // State variables
 let imageFiles = []; // Stores image file objects (including original path etc.) for sketching
 let imageUrls = []; // Stores file:// URLs for displaying images for sketching
-let currentPlaybackImageIndexes = []; // Stores raw indices of images currently eligible for playback
-let currentImageIndex = -1; 
-let displayTime = 60; 
-let countdownTimer; 
-let remainingTime; 
-let isPlaying = false; 
-let isPaused = false; 
+
+// NEW: The predetermined sequence for the current sketch session.
+// This list of raw indices will be fixed (and possibly shuffled) at the start of a session.
+let currentSessionPlaybackQueue = [];
+
+let currentImageIndex = -1;
+let displayTime = 60;
+let countdownTimer;
+let remainingTime;
+let isPlaying = false;
+let isPaused = false;
 let currentDefaultImageFolderPath = ''; // Saves current default image folder path
 let currentLoadedFolderPath = ''; // Saves current folder path loaded in image library view (for browsing)
 let mainMenuSelectedFolderPath = ''; // Stores the path explicitly selected for sketching in the main menu
@@ -137,7 +141,7 @@ let mainMenuSelectedFolderPath = ''; // Stores the path explicitly selected for 
 let isMirrorEnabled = false;
 let isGrayscaleEnabled = false;
 let isGridEnabled = false;
-let isAlwaysOnTop = false; 
+let isAlwaysOnTop = false;
 let isRandomPlayback = true; // New: default to random playback
 let isFilterMarkedEnabled = true; // New: default to true (filter marked images) - for playback
 let isLibraryFilterMarkedEnabled = false; // New: default to false (show all images) - for library view
@@ -150,17 +154,17 @@ let startupMode = 'lastUsedPath'; // NEW: Default startup mode
 
 
 // Image playback history
-let displayedImageHistory = [];
-let historyPointer = -1; 
+let displayedImageHistory = []; // Stores the raw indices of images actually displayed in this session
+let historyPointer = -1; // Pointer to the current image in displayedImageHistory
 
 // New: Global image marks object. Keys are original file paths, values are arrays of { duration, timestamp }
-let imageMarks = {}; 
+let imageMarks = {};
 
 // Default settings values
-const defaultGridColorHex = '#FFFFFF'; 
-const defaultGridSize = 50; 
+const defaultGridColorHex = '#FFFFFF';
+const defaultGridSize = 50;
 const defaultTimeFormat = 'hours:minutes:seconds'; // Changed default to "时:分:秒"
-const gridAlpha = 0.3; 
+const gridAlpha = 0.3;
 
 // Current setting values (will be loaded from storage)
 let currentMainMenuBackgroundPath = ''; // This will store the path for 'staticImage' mode for main menu
@@ -173,6 +177,25 @@ let currentTimeFormat = defaultTimeFormat;
 const itemsPerPage = 30; // Number of items (folders + images) to display per page
 let currentFolderItems = []; // Stores ALL sorted items (directories + files) for the current folder view
 let currentPage = 0; // 0-indexed page number
+
+/**
+ * Helper function to shuffle an array (Fisher-Yates algorithm).
+ * @param {Array} array - The array to shuffle.
+ * @returns {Array} The shuffled array.
+ */
+function shuffleArray(array) {
+    let currentIndex = array.length, randomIndex;
+    // While there remain elements to shuffle.
+    while (currentIndex !== 0) {
+        // Pick a remaining element.
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
 
 
 /**
@@ -278,7 +301,7 @@ function getAverageColor(imgElement) {
     let count = 0;
     const pixelCount = hiddenImageCanvas.width * hiddenImageCanvas.height;
     // Sample up to 10,000 pixels for performance, or every pixel if image is small
-    const step = Math.max(1, Math.floor(pixelCount / 10000)); 
+    const step = Math.max(1, Math.floor(pixelCount / 10000));
 
     for (let i = 0; i < imageData.length; i += 4 * step) { // Increment by 4 (RGBA) * step
         // const alpha = imageData[i + 3]; // Alpha component (not used for average color)
@@ -406,26 +429,35 @@ async function showMainMenu(folderPathToSetAsSelected = null) {
     // IMPORTANT: Determine the folder to display and load for sketching
     let targetFolderForSketch = mainMenuSelectedFolderPath; // Default to existing selection
 
+    // If a new folder is explicitly provided (e.g., from "选择此文件夹" button or initial sketchFolderInputDisplay click)
     if (folderPathToSetAsSelected) {
-        // If a new folder is explicitly provided (e.g., from "选择此文件夹" button)
         targetFolderForSketch = folderPathToSetAsSelected;
         mainMenuSelectedFolderPath = folderPathToSetAsSelected; // Update the persistent state
-    } else if (startupMode === 'defaultPath' && currentDefaultImageFolderPath) {
-        // If startup mode is default path, and a default path exists, use it
-        targetFolderForSketch = currentDefaultImageFolderPath;
-        mainMenuSelectedFolderPath = currentDefaultImageFolderPath; // Also update persistent state to reflect what's being shown
-    } else if (startupMode === 'lastUsedPath' && mainMenuSelectedFolderPath) {
-        // If startup mode is last used path, and a last used path exists, use it
-        targetFolderForSketch = mainMenuSelectedFolderPath;
-    }
-    // If none of the above, targetFolderForSketch remains whatever mainMenuSelectedFolderPath was,
-    // which might be empty, leading to the "Click to select" message.
+    } else {
+        // This branch is for when showMainMenu() is called without an explicit path,
+        // typically when returning from the image library via the 'close' button
+        // or during initial application load if no lastUsedPath is found.
 
+        // If startup mode is default path, AND we don't have a previously selected path,
+        // THEN use the default path. This prevents overwriting a user's current selection
+        // when simply returning from browsing the library.
+        if (startupMode === 'defaultPath' && currentDefaultImageFolderPath && !mainMenuSelectedFolderPath) {
+            targetFolderForSketch = currentDefaultImageFolderPath;
+            mainMenuSelectedFolderPath = currentDefaultImageFolderPath; // Also update persistent state to reflect what's being shown
+        } else if (startupMode === 'lastUsedPath' && mainMenuSelectedFolderPath) {
+            // If startup mode is last used path, and a last used path exists, use it
+            targetFolderForSketch = mainMenuSelectedFolderPath;
+        }
+        // If none of the above conditions met (e.g., startupMode is defaultPath but mainMenuSelectedFolderPath already exists,
+        // or startupMode is lastUsedPath but mainMenuSelectedFolderPath is empty),
+        // then targetFolderForSketch remains whatever mainMenuSelectedFolderPath was (which might be empty),
+        // leading to the "Click to select" message.
+    }
 
     if (targetFolderForSketch) {
         // If there's a folder to display, update the UI and load its images for playback
         sketchFolderInputDisplay.textContent = targetFolderForSketch;
-        
+
         // Re-read images for the *selected* folder to ensure `imageFiles` and `imageUrls` are accurate
         // This is crucial if user browsed around in the library but came back without selecting
         // a new folder for sketching. The old `imageFiles` might be from a different folder.
@@ -450,8 +482,10 @@ async function showMainMenu(folderPathToSetAsSelected = null) {
         imageUrls = [];
     }
 
-    updatePlaybackImagePool(); // Recalculate playback pool based on potentially reloaded imageFiles
-    updateMainMenuHintText(); // Update hint text based on current selection
+    // Update hint text based on current selection (uses getEligibleImageRawIndexes)
+    updateMainMenuHintText();
+    // Update start button state here
+    updateStartButtonState(); // <-- Call the new function
 
     // Show traffic lights when in main menu
     if (window.electronAPI) {
@@ -517,7 +551,7 @@ async function renderCurrentPageThumbnails() {
     for (const item of itemsToDisplay) { // Changed to for...of loop to use await
         const thumbnailItem = document.createElement('div');
         thumbnailItem.classList.add('thumbnail-item');
-        
+
         if (item.type === 'directory') {
             thumbnailItem.innerHTML = `
                 <span class="folder-icon">📁</span>
@@ -572,7 +606,8 @@ async function renderCurrentPageThumbnails() {
                     if (window.electronAPI && pathToDelete) {
                         await window.electronAPI.clearImageMarksForPath(pathToDelete);
                         imageMarks = await window.electronAPI.getImageMarks(); // Reload marks
-                        updatePlaybackImagePool(); // Also update the playback pool for main menu
+                        // No need to call updatePlaybackImagePool() here, it's done on session start
+                        // and advanceImage/updateNavigationButtons will dynamically check for marked images.
                         await renderCurrentPageThumbnails(); // NOW AWAIT IT to ensure DOM is fully rebuilt
                         // FIX: Defer scroll restoration slightly to allow DOM to render
                         requestAnimationFrame(() => {
@@ -672,20 +707,20 @@ async function showFolderBrowserView(folderPath) {
     dynamicBackgroundLayer.style.backgroundColor = 'transparent';
     dynamicBackgroundLayer.classList.remove('grayscale-active-bg'); // Ensure grayscale is off for this layer
     updateMainMenuBackground(); // Image library view also uses main menu background (on body)
-    
+
     currentLoadedFolderPath = folderPath; // Update current loaded folder path for *browsing* context
     // Simplify path display, only show the last part of the folder name, but keep full path as tooltip
     const pathParts = folderPath.split(/[/\\]/);
     currentLibraryPathDisplay.textContent = `当前文件夹: ${pathParts[pathParts.length - 1]}`;
     currentLibraryPathDisplay.title = folderPath; // Full path as tooltip
-    
+
     thumbnailsGridContainer.innerHTML = ''; // Clear previous thumbnails
     folderBrowserInfoMessage.textContent = '加载中...'; // Display loading message
     folderBrowserInfoMessage.classList.remove('hidden'); // Ensure message is displayed
 
     // Clear currentFolderItems, it will be repopulated with contents of `folderPath` for browsing
-    currentFolderItems = []; 
-    
+    currentFolderItems = [];
+
     // Disable "Select this folder" button by default until images are loaded for this browsed folder
     selectFolderForSketchAndReturnToMenuButton.disabled = true;
 
@@ -715,7 +750,7 @@ async function showFolderBrowserView(folderPath) {
                 return !isMarked; // Only keep unmarked images
             });
         }
-        
+
         // Combine all items (directories + sorted images) for pagination display in the browser
         currentFolderItems = directories.concat(allImageFilesForBrowsing.sort((a, b) => naturalSort(a, b)));
         currentFolderItems.sort((a,b) => { // Sort all items (folders first, then files)
@@ -764,7 +799,7 @@ function getParentPath(currentPath) {
     if (parts.length === 2 && parts[1] === '' && /^[a-zA-Z]:$/.test(parts[0])) {
         return null;
     }
-    
+
     // Remove the last part
     parts.pop();
     // Recombine path
@@ -843,7 +878,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Load main menu background settings
         mainMenuBackgroundChoice = await window.electronAPI.loadSetting('mainMenuBackgroundChoice') ?? 'solidColor';
         currentMainMenuBackgroundPath = await window.electronAPI.loadSetting('mainMenuBackgroundPath') || '';
-        
+
         mainMenuBackgroundChoiceRadios.forEach(radio => {
             if (radio.value === mainMenuBackgroundChoice) {
                 radio.checked = true;
@@ -865,12 +900,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize visibility of staticImagePathRow
         staticImagePathRow.style.display = (previewBackgroundChoice === 'staticImage') ? 'flex' : 'none';
         previewBackgroundPathDisplay.value = currentPreviewBackgroundPath || '未选择静态图片';
-        
+
         // Load grid color
         const savedGridColor = await window.electronAPI.loadSetting('gridColor');
         if (savedGridColor) {
             gridColorPicker.value = savedGridColor;
-            setGridColor(savedGridColor); 
+            setGridColor(savedGridColor);
         } else {
             gridColorPicker.value = defaultGridColorHex;
             setGridColor(defaultGridColorHex);
@@ -880,7 +915,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const savedGridSize = await window.electronAPI.loadSetting('gridSize');
         if (savedGridSize) {
             gridSizeInput.value = savedGridSize;
-            setGridSize(savedGridSize); 
+            setGridSize(savedGridSize);
         } else {
             gridSizeInput.value = defaultGridSize;
             setGridSize(defaultGridSize);
@@ -966,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else { // 'lastUsedPath'
             initialPathToLoad = mainMenuSelectedFolderPath;
         }
-        
+
         // Ensure mainMenuSelectedFolderPath reflects what is *actually* being loaded on startup
         // This is important for the main menu display if we directly go to folder browser view.
         mainMenuSelectedFolderPath = initialPathToLoad;
@@ -976,8 +1011,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             // If there's a path, try to display the folder browser (image library)
             await showFolderBrowserView(initialPathToLoad); // Ensure to await loading
             // Update main menu display to reflect the loaded path, in case we return to it
-            sketchFolderInputDisplay.textContent = mainMenuSelectedFolderPath; 
-            
+            sketchFolderInputDisplay.textContent = mainMenuSelectedFolderPath;
+
             // Also load images for playback purposes, as showFolderBrowserView primarily focuses on browsing
             try {
                 const items = await window.electronAPI.readFolderImages(initialPathToLoad);
@@ -994,7 +1029,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // If initial load fails, fall back to main menu
                 showMainMenu();
             }
-            updatePlaybackImagePool(); // Update playback pool after loading images
             updateMainMenuHintText(); // Update hint text
 
         } else {
@@ -1076,10 +1110,10 @@ sketchFolderInputDisplay.addEventListener('click', async () => {
                 // User selected a new folder, set it as the main menu's selected folder
                 mainMenuSelectedFolderPath = folderPath;
                 await window.electronAPI.saveSetting('mainMenuSelectedFolderPath', mainMenuSelectedFolderPath); // Save this selection
-                
+
                 // Update the display immediately
                 sketchFolderInputDisplay.textContent = mainMenuSelectedFolderPath;
-                
+
                 // Load images for *this* newly selected path for playback purposes
                 try {
                     const items = await window.electronAPI.readFolderImages(mainMenuSelectedFolderPath);
@@ -1095,8 +1129,8 @@ sketchFolderInputDisplay.addEventListener('click', async () => {
                     sketchFolderInputDisplay.textContent = '无法加载，请重新选择...';
                     mainMenuSelectedFolderPath = ''; // Clear corrupted state
                 }
-                updatePlaybackImagePool(); // Recalculate playback pool
                 updateMainMenuHintText(); // Update hint text
+                updateStartButtonState(); // <-- Call the new function here after updating imageFiles/Urls
 
                 // Finally, open the image library to the newly selected folder for browsing
                 showFolderBrowserView(mainMenuSelectedFolderPath);
@@ -1109,43 +1143,81 @@ sketchFolderInputDisplay.addEventListener('click', async () => {
     }
 });
 
+/**
+ * Generates the initial list of eligible image raw indices for a potential playback session.
+ * This list is NOT shuffled here. It's sorted alphabetically.
+ * It's based on the currently loaded `imageFiles` and the `isFilterMarkedEnabled` setting.
+ * @returns {Array<number>} An array of raw indices (from `imageFiles`) that are eligible for playback.
+ */
+function getEligibleImageRawIndexes() {
+    const eligibleIndexes = [];
+    for (let i = 0; i < imageFiles.length; i++) {
+        const filePath = imageFiles[i].path;
+        // If filter is enabled AND image is marked, skip it
+        if (isFilterMarkedEnabled && imageMarks[filePath] && imageMarks[filePath].length > 0) {
+            continue;
+        }
+        eligibleIndexes.push(i); // Add the raw index to the eligible list
+    }
+    // Sort the eligible indices based on the original file names for sequential playback consistency
+    eligibleIndexes.sort((a, b) => naturalSort(imageFiles[a], imageFiles[b]));
+    return eligibleIndexes;
+}
+
+/**
+ * Updates the '开始速写' button's disabled state and tooltip.
+ * This function should be called whenever the conditions for the button's state might change.
+ */
+function updateStartButtonState() {
+    const numEligibleImages = getEligibleImageRawIndexes().length;
+    startButton.disabled = (numEligibleImages === 0);
+
+    if (startButton.disabled) {
+        if (mainMenuSelectedFolderPath && imageUrls.length > 0 && isFilterMarkedEnabled && numEligibleImages === 0) {
+            startButton.setAttribute('data-tooltip', '该文件夹下图片已全部标记');
+        } else if (mainMenuSelectedFolderPath && imageUrls.length > 0 && numEligibleImages === 0) {
+            startButton.setAttribute('data-tooltip', '没有可播放的图片');
+        } else {
+            // This covers cases where no folder is selected, or selected folder has no images at all.
+            startButton.setAttribute('data-tooltip', '请选择速写文件夹');
+        }
+    } else {
+        startButton.setAttribute('data-tooltip', '开始速写');
+    }
+}
+
 
 /**
  * Starts the sketch session.
  * Validates settings, hides the menu, displays the image area, and starts playback.
- * This function is now also called from advanceImage and when starting from the main menu.
  */
 function initiateSketchSession() {
-    // displayTime is now controlled directly by preset button clicks,
-    // or potentially from input field.
-    // When infinite time is chosen, displayTime will be Infinity.
+    // If the start button is disabled (meaning no eligible images), just return.
+    // The UI (disabled button, tooltip) already provides feedback.
+    if (startButton.disabled) {
+        return;
+    }
+
     if (displayTime !== Infinity && (isNaN(displayTime) || displayTime <= 0)) {
         showCustomAlert('请设置一个有效的图片显示时间 (大于0的整数)。', '时间设置错误');
         return;
     }
-    
-    // IMPORTANT: Re-populate the playback image pool to ensure the latest filter setting is applied
-    // This is crucial if the filter was changed while in main menu, or after folder selection.
-    updatePlaybackImagePool(); 
 
-    if (currentPlaybackImageIndexes.length === 0) {
-        // Determine the specific error message
-        let errorMessage = '没有可供播放的图片。请选择一个图片文件夹或调整筛选设置。';
-        let errorTitle = '图片缺失错误';
+    // 1. Get the initial pool of eligible images based on current filter settings
+    const allEligibleRawIndexes = getEligibleImageRawIndexes();
 
-        if (imageUrls.length > 0 && isFilterMarkedEnabled) {
-            // If images were loaded but all are filtered out by marking
-            errorMessage = '该文件夹下图片已全部标记';
-            errorTitle = '播放结束';
-        } else if (imageUrls.length === 0) {
-            // No images loaded at all (no folder selected or empty folder)
-            errorMessage = '没有可供播放的图片。请先在图片库中选择一个文件夹。';
-            errorTitle = '图片缺失错误';
-        }
-
-        showCustomAlert(errorMessage, errorTitle);
-        stopGame(); // Stop the session if no images are available in the filtered pool
+    // Removed the alert here, as per user request.
+    // The start button's disabled state already provides feedback.
+    if (allEligibleRawIndexes.length === 0) {
+        console.warn('Initiate sketch session called with no eligible images. This should be prevented by button disabling.');
         return;
+    }
+
+    // 2. Determine the playback sequence for THIS session
+    if (isRandomPlayback) {
+        currentSessionPlaybackQueue = shuffleArray([...allEligibleRawIndexes]); // Shuffle a copy
+    } else {
+        currentSessionPlaybackQueue = [...allEligibleRawIndexes]; // Use as-is, already sorted
     }
 
     // Hide traffic lights when starting sketch session
@@ -1153,17 +1225,11 @@ function initiateSketchSession() {
         window.electronAPI.setTrafficLightVisibility(false);
     }
 
-    // Reset image history (should only contain indices from currentPlaybackImageIndexes)
-    displayedImageHistory = [];
-    historyPointer = -1;
-    isPaused = false; // Ensure not paused when starting
-    pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
-
     controlsMenu.classList.add('hidden');
     folderBrowserView.classList.add('hidden');
     imageDisplayArea.classList.remove('hidden'); // Show image display area
     topRightMenuButtons.classList.add('hidden'); // Hide top-right menu buttons during playback
-    
+
     // Clear background from body and apply to dynamic layer
     document.body.style.backgroundColor = 'transparent';
     document.body.style.backgroundImage = 'none'; // Ensure body background is clear
@@ -1171,10 +1237,17 @@ function initiateSketchSession() {
     updatePreviewBackgroundGrayscaleEffect(); // Ensure grayscale is applied to dynamicBackgroundLayer if enabled
 
     isPlaying = true;
-    
-    // Start with an image from the available (filtered) list
-    advanceImage(true, false); // Pass true for isStartingNewSession, filteredIndexes is now implicitly handled
-    updateNavigationButtons(); 
+
+    // Reset image history for the new session
+    displayedImageHistory = [];
+    historyPointer = -1;
+    isPaused = false; // Ensure not paused when starting
+    pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
+
+    // Start with the first image from the determined sequence
+    advanceImage(true, false); // Pass true for isStartingNewSession
+    updateNavigationButtons();
+    updateMarkingUI(); // Make sure marking UI is updated for first image
 }
 
 // Main menu start button now calls unified initiateSketchSession
@@ -1196,8 +1269,8 @@ selectFolderForSketchAndReturnToMenuButton.addEventListener('click', async () =>
  */
 function setPresetTime(time, activeButton = null) {
     displayTime = time;
-    
-    // When infinite time is selected, disable the number input and clear its value
+
+    // When infinite time is chosen, disable the number input and clear its value
     // The '∞' symbol will be shown in the countdown display instead.
     if (time === Infinity) {
         displayTimeInput.value = ''; // Clear value
@@ -1206,7 +1279,7 @@ function setPresetTime(time, activeButton = null) {
         displayTimeInput.value = time;
         displayTimeInput.disabled = false;
     }
-    
+
     updatePresetTimeButtons(time, activeButton);
     updateMainMenuHintText(); // Update hint text when display time changes
 }
@@ -1221,7 +1294,7 @@ function setPresetTime(time, activeButton = null) {
  */
 function updatePresetTimeButtons(currentDisplayTimeValue, clickedButton = null) {
     const presetButtons = presetTimeButtonsContainer.querySelectorAll('.toggle');
-    
+
     // Remove 'active' and 'disabled-preset' from all buttons first
     presetButtons.forEach(btn => {
         btn.classList.remove('active', 'disabled-preset');
@@ -1254,7 +1327,7 @@ displayTimeInput.addEventListener('input', (event) => {
     const inputValue = event.target.value;
     // When user types in the number input, it's always a finite number.
     const numValue = parseInt(inputValue, 10);
-    if (!isNaN(numValue) && numValue >= 1) { 
+    if (!isNaN(numValue) && numValue >= 1) {
         displayTime = numValue;
     } else if (inputValue === '') { // Allow empty input temporarily (e.g., user is typing)
         displayTime = NaN; // Set to NaN or some indicator of invalid state
@@ -1263,8 +1336,8 @@ displayTimeInput.addEventListener('input', (event) => {
     // so the last valid displayTime remains, or it becomes NaN.
     // The preset buttons logic will handle their activation based on the actual displayTime.
 
-    updatePresetTimeButtons(displayTime); 
-    updateMainMenuHintText(); 
+    updatePresetTimeButtons(displayTime);
+    updateMainMenuHintText();
 });
 
 
@@ -1291,8 +1364,8 @@ randomPlaybackToggle.addEventListener('click', async () => {
     if (window.electronAPI) {
         await window.electronAPI.saveSetting('isRandomPlayback', isRandomPlayback);
     }
-    // If in playback mode, changing this will affect the NEXT image's selection.
-    // No need to stop and restart immediately, as advanceImage already checks isRandomPlayback.
+    // If in playback mode, changing this will affect the NEXT session's order.
+    // No need to stop and restart immediately.
 });
 
 /**
@@ -1304,15 +1377,17 @@ filterMarkedToggle.addEventListener('click', async () => {
     if (window.electronAPI) {
         await window.electronAPI.saveSetting('isFilterMarkedEnabled', isFilterMarkedEnabled);
     }
-    // Always update the image pool when filter setting changes
-    updatePlaybackImagePool();
-    updateMainMenuHintText(); // Update hint text when filter changes
-
-    // If currently in playback mode, stop and restart to apply the new filter immediately
-    // If not playing, or in the main menu, the next 'Start Sketch' will use the updated pool.
-    if (isPlaying) {
-        stopGame(); // Stop current playback
-        showCustomAlert('已更新图片筛选设置。请重新开始速写。', '设置更新');
+    
+    // When the filter setting changes, force a re-evaluation of the main menu state
+    // This will update the start button's disabled state and the hint text.
+    if (!imageDisplayArea.classList.contains('hidden') || !folderBrowserView.classList.contains('hidden')) {
+        // If we are currently in playback or folder browser, go back to main menu
+        // and let showMainMenu handle the re-evaluation of buttons/hints.
+        stopGame(); // This calls showMainMenu internally.
+    } else {
+        // If we are already in the main menu, directly re-evaluate.
+        // Pass null to showMainMenu to re-use currentMainMenuSelectedFolderPath
+        showMainMenu(null);
     }
 });
 
@@ -1334,7 +1409,7 @@ mainMenuBackgroundChoiceRadios.forEach(radio => {
         // Only update background if currently in main menu or folder browser mode
         if (controlsMenu.classList.contains('hidden') && folderBrowserView.classList.contains('hidden')) {
             // Is in image display area, do nothing
-        } else { 
+        } else {
             updateMainMenuBackground();
         }
         if (mainMenuBackgroundChoice === 'staticImage') {
@@ -1356,7 +1431,7 @@ selectMainMenuImageButton.addEventListener('click', async () => {
             // Only update background if currently in main menu or folder browser mode
             if (controlsMenu.classList.contains('hidden') && folderBrowserView.classList.contains('hidden')) {
                 // Is in image display area, do nothing
-            } else { 
+            } else {
                 updateMainMenuBackground();
             }
             showCustomAlert('主菜单静态图片背景已更新并保存。', '背景设置');
@@ -1378,7 +1453,7 @@ clearMainMenuImageButton.addEventListener('click', async () => {
     // Only update background if currently in main menu or folder browser mode
     if (controlsMenu.classList.contains('hidden') && folderBrowserView.classList.contains('hidden')) {
         // Is in image display area, do nothing
-    } else { 
+    } else {
         updateMainMenuBackground();
     }
     showCustomAlert('主菜单静态图片背景已清除，将显示纯色背景。', '背景设置');
@@ -1400,7 +1475,7 @@ previewBackgroundChoiceRadios.forEach(radio => {
             updatePreviewBackground(); // This will handle applying solid, static or average color background
             updatePreviewBackgroundGrayscaleEffect(); // Also update grayscale effect for background
         }
-        
+
         // If switching away from staticImage, clear the path in memory (but not from storage immediately)
         // This ensures "纯色" behaves as expected and "平均色" doesn't try to use an old path.
         if (previewBackgroundChoice !== 'staticImage') {
@@ -1477,7 +1552,6 @@ setDefaultImageFolderButton.addEventListener('click', async () => {
             // This ensures if '上次路径' is selected, it points to the newly set default.
             mainMenuSelectedFolderPath = folderPath;
             await window.electronAPI.saveSetting('mainMenuSelectedFolderPath', mainMenuSelectedFolderPath); // Save this selection
-            showCustomAlert('默认图片文件夹路径已设置并保存。下次启动将自动加载。', '默认路径设置');
             // After setting, if currently in main menu or image library, should refresh image library view to display new default path content
             if (!controlsMenu.classList.contains('hidden') || !folderBrowserView.classList.contains('hidden')) {
                 showMainMenu(); // Show main menu, which will load images from the new default path
@@ -1499,11 +1573,10 @@ clearDefaultImageFolderButton.addEventListener('click', async () => {
     defaultImageFolderPathDisplay.value = '未设置默认路径';
     // When clearing default, also clear mainMenuSelectedFolderPath if it was pointing to the default one
     // This condition prevents clearing mainMenuSelectedFolderPath if the user explicitly selected a *different* folder.
-    if (mainMenuSelectedFolderPath === currentDefaultImageFolderPath) { 
-        mainMenuSelectedFolderPath = ''; 
+    if (mainMenuSelectedFolderPath === currentDefaultImageFolderPath) {
+        mainMenuSelectedFolderPath = '';
         await window.electronAPI.saveSetting('mainMenuSelectedFolderPath', mainMenuSelectedFolderPath);
     }
-    showCustomAlert('默认图片文件夹路径已清除。下次启动将显示主菜单。', '默认路径设置');
     // After clearing, if currently in image library view, should return to main menu
     if (!folderBrowserView.classList.contains('hidden')) {
         showMainMenu(); // Show main menu, which will now be in "no folder selected" state
@@ -1514,7 +1587,7 @@ clearDefaultImageFolderButton.addEventListener('click', async () => {
  * Grid color picker change event
  */
 gridColorPicker.addEventListener('input', (event) => {
-    setGridColor(event.target.value); 
+    setGridColor(event.target.value);
 });
 
 /**
@@ -1522,7 +1595,7 @@ gridColorPicker.addEventListener('input', (event) => {
  */
 gridSizeInput.addEventListener('input', (event) => {
     const size = parseInt(event.target.value, 10);
-    if (!isNaN(size) && size >= 10 && size <= 200) { 
+    if (!isNaN(size) && size >= 10 && size <= 200) {
         setGridSize(size);
     } else {
         console.warn('Invalid grid size input.');
@@ -1600,7 +1673,7 @@ function toggleGridEffect() {
             drawGrid();
         }
     } else {
-        ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); 
+        ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
     }
 }
 gridToggle.addEventListener('click', toggleGridEffect);
@@ -1612,7 +1685,7 @@ overlayGridToggle.addEventListener('click', toggleGridEffect);
  */
 function toggleAlwaysOnTop() {
     isAlwaysOnTop = !isAlwaysOnTop;
-    if (window.electronAPI) { 
+    if (window.electronAPI) {
         window.electronAPI.setAlwaysOnTop(isAlwaysOnTop);
         // Also save the setting for persistence
         window.electronAPI.saveSetting('isAlwaysOnTop', isAlwaysOnTop);
@@ -1641,7 +1714,7 @@ if (window.electronAPI) {
 openInFinderButton.addEventListener('click', () => {
     if (window.electronAPI && currentImageIndex !== -1 && imageFiles[currentImageIndex] && imageFiles[currentImageIndex].path) {
         // Use originalPath to open file, because file:// URL cannot be directly used in Finder
-        const currentFilePath = imageFiles[currentImageIndex].path; 
+        const currentFilePath = imageFiles[currentImageIndex].path;
         window.electronAPI.openFileInFinder(currentFilePath);
     } else {
         showCustomAlert('此功能仅在打包为桌面应用后可用，且需要选择图片文件夹。', '提示');
@@ -1660,23 +1733,22 @@ markStarButton.addEventListener('click', async () => {
         if (isMarked) {
             // If marked, clear all marks for this image
             await window.electronAPI.clearImageMarksForPath(filePath);
-            // After clearing, reload marks and update playback pool (if filter is active)
+            // After clearing, reload marks
             imageMarks = await window.electronAPI.getImageMarks();
-            updatePlaybackImagePool(); // Re-calculate playback pool
         } else {
             // If not marked, add a new mark
             // For infinite mode, the duration is not relevant for auto-marking, but we still store it.
             const duration = (displayTime === Infinity) ? 0 : displayTime; // Store 0 for infinite, actual duration otherwise
             await window.electronAPI.saveImageMark(filePath, duration);
-            // After saving, reload marks and update playback pool (if filter is active)
+            // After saving, reload marks
             imageMarks = await window.electronAPI.getImageMarks();
-            updatePlaybackImagePool(); // Re-calculate playback pool
         }
         updateMarkingUI(); // Update UI immediately
         updateMainMenuHintText(); // Update hint text when marking changes
+        updateStartButtonState(); // <-- Call the new function here as marking/unmarking can affect eligible images
         // Important: Re-render the folder browser view to update folder completion marks
         if (!folderBrowserView.classList.contains('hidden')) {
-            await showFolderBrowserView(currentLoadedFolderPath); 
+            await showFolderBrowserView(currentLoadedFolderPath);
         }
     } else {
         // Keep the alert for actual operation failure, not just UI feedback
@@ -1705,7 +1777,7 @@ function updateMarkingUI() {
         marks.sort((a, b) => b.timestamp - a.timestamp);
         const latestMark = marks[0];
         const date = new Date(latestMark.timestamp);
-        
+
         // Format timestamp into readable date/time (MM/DD)
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const day = date.getDate().toString().padStart(2, '0');
@@ -1723,45 +1795,6 @@ function updateMarkingUI() {
 }
 
 /**
- * Updates the global currentPlaybackImageIndexes array based on the filter setting.
- * This function should be called whenever the selected folder changes or the filter setting changes.
- */
-function updatePlaybackImagePool() {
-    currentPlaybackImageIndexes = [];
-    for (let i = 0; i < imageUrls.length; i++) {
-        const filePath = imageFiles[i].path;
-        // If filter is enabled AND image is marked, skip it
-        if (isFilterMarkedEnabled && imageMarks[filePath] && imageMarks[filePath].length > 0) {
-            continue; 
-        }
-        currentPlaybackImageIndexes.push(i); // Add the raw index to the eligible list
-    }
-    // Sort the eligible indices based on the original file names for sequential playback consistency
-    currentPlaybackImageIndexes.sort((a, b) => naturalSort(imageFiles[a], imageFiles[b])); // Pass whole object for naturalSort
-    
-    // Re-enable/disable start button based on the filtered list length
-    startButton.disabled = (currentPlaybackImageIndexes.length === 0);
-
-    // Update tooltip for the start button
-    if (startButton.disabled) {
-        if (imageUrls.length > 0 && isFilterMarkedEnabled && currentPlaybackImageIndexes.length === 0) {
-            // All images exist, filter is on, and all are marked
-            startButton.setAttribute('data-tooltip', '该文件夹下图片已全部标记');
-        } else if (imageUrls.length > 0 && currentPlaybackImageIndexes.length === 0) {
-            // Images exist, filter is off, but still no playable images (e.g., all were already filtered out without marking)
-            // This case should ideally not happen if filtering is the *only* reason for empty pool and images exist.
-            // Fallback to a generic "no playable images"
-            startButton.setAttribute('data-tooltip', '没有可播放的图片');
-        } else {
-            // No folder selected or empty folder
-            startButton.setAttribute('data-tooltip', '请选择速写文件夹');
-        }
-    } else {
-        startButton.setAttribute('data-tooltip', '开始速写');
-    }
-}
-
-/**
  * Formats total seconds into H:M:S, M:S, or S based on duration.
  * @param {number} totalSeconds - The total number of seconds.
  * @returns {string} - Formatted time string.
@@ -1769,17 +1802,31 @@ function updatePlaybackImagePool() {
 function formatTimeForHint(totalSeconds) {
     if (totalSeconds === Infinity) {
         return '无限制时间';
-    } else if (totalSeconds < 60) {
-        return `${totalSeconds}秒`;
-    } else if (totalSeconds < 3600) {
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        return `${minutes}分${seconds}秒`;
+    } else if (isNaN(totalSeconds) || totalSeconds <= 0) { // Handle NaN or zero/negative total seconds
+        return ''; // Return empty string, let updateMainMenuHintText handle the "请选择一个时间" message
     } else {
         const hours = Math.floor(totalSeconds / 3600);
-        const remainingMinutes = Math.floor((totalSeconds % 3600) / 60);
-        const remainingSeconds = totalSeconds % 60;
-        return `${hours}小时${remainingMinutes}分${remainingSeconds}秒`;
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        let parts = [];
+        if (hours > 0) {
+            parts.push(`${hours}小时`);
+        }
+        if (minutes > 0) {
+            parts.push(`${minutes}分`);
+        }
+        if (seconds > 0) {
+            parts.push(`${seconds}秒`);
+        }
+        
+        // If all parts are zero, but totalSeconds was valid (e.g., 0.5s rounded down),
+        // or if totalSeconds was just a small non-zero value, show at least seconds.
+        if (parts.length === 0 && totalSeconds > 0) {
+            return `${totalSeconds}秒`; // Fallback to raw seconds if nothing else is shown and it's positive
+        }
+
+        return parts.join(''); // Join parts without spaces
     }
 }
 
@@ -1787,26 +1834,27 @@ function formatTimeForHint(totalSeconds) {
  * Updates the hint text in the main menu based on selected images and time.
  */
 function updateMainMenuHintText() {
-    const numImages = currentPlaybackImageIndexes.length;
+    const numEligibleImages = getEligibleImageRawIndexes().length; // Use the eligible image count
     let hintText = '';
 
-    if (mainMenuSelectedFolderPath && numImages > 0) {
-        if (displayTime === Infinity) {
-            hintText = `当前一共选择了${numImages}张图片，时间设置为无限制。`;
-        } else {
-            const estimatedTotalTimeSeconds = numImages * displayTime;
-            const formattedEstimatedTime = formatTimeForHint(estimatedTotalTimeSeconds);
-            hintText = `当前一共选择了${numImages}张图片，估计耗时${formattedEstimatedTime}。`;
-        }
-    } else if (mainMenuSelectedFolderPath && numImages === 0 && imageUrls.length > 0 && isFilterMarkedEnabled) {
-        // Folder selected, but all images are filtered out by marking
-        hintText = '该文件夹下图片已全部标记。请调整过滤设置或选择其他文件夹。';
-    } else if (mainMenuSelectedFolderPath && numImages === 0 && imageUrls.length === 0) {
-         // Folder selected, but no images were found at all
-        hintText = '当前文件夹中没有可速写的图片。';
-    }
-    else {
+    if (!mainMenuSelectedFolderPath) {
         hintText = '选择文件夹以开始速写。';
+    } else if (numEligibleImages === 0 && imageUrls.length > 0 && isFilterMarkedEnabled) {
+        hintText = '该文件夹下图片已全部标记。请调整过滤设置或选择其他文件夹。';
+    } else if (imageUrls.length === 0) {
+        hintText = '当前文件夹中没有可速写的图片。';
+    } else if (isNaN(displayTime) || displayTime <= 0) { // New condition for invalid time
+        hintText = `当前一共选择了${numEligibleImages}张图片。请选择一个速写时间。`;
+    } else {
+        const estimatedTotalTimeSeconds = numEligibleImages * displayTime;
+        const formattedEstimatedTime = formatTimeForHint(estimatedTotalTimeSeconds);
+        // Only show estimated time if it's not empty (meaning it's a valid, non-zero duration)
+        if (formattedEstimatedTime) {
+            hintText = `当前一共选择了${numEligibleImages}张图片，估计耗时${formattedEstimatedTime}。`;
+        } else {
+            // This case should ideally not be reached if previous checks are correct
+            hintText = `当前一共选择了${numEligibleImages}张图片，请选择一个有效速写时间。`;
+        }
     }
     mainMenuHintText.textContent = hintText;
 }
@@ -1815,119 +1863,104 @@ function updateMainMenuHintText() {
 /**
  * Displays the next image in sequence or a random one, based on the playback mode.
  * This function handles both automatic advancement (from timer) and manual 'next' clicks.
- * It always operates on the `currentPlaybackImageIndexes` list.
+ * It now iterates through the `currentSessionPlaybackQueue`, skipping marked images if filter is enabled.
  * @param {boolean} isStartingNewSession - True if this call initiates a new sketch session.
  * @param {boolean} isTimerTriggered - True if called by the timer (for auto-marking).
  */
 async function advanceImage(isStartingNewSession = false, isTimerTriggered = false) {
-    // First, re-check currentPlaybackImageIndexes in case the image was marked/unmarked mid-session
-    updatePlaybackImagePool(); 
-
-    if (currentPlaybackImageIndexes.length === 0) {
-        // Determine the specific error message
-        let errorMessage = '没有可供播放的图片。请选择一个图片文件夹或调整筛选设置。';
-        let errorTitle = '图片缺失错误';
-
-        if (imageUrls.length > 0 && isFilterMarkedEnabled) {
-            // If images were loaded but all are filtered out by marking
-            errorMessage = '该文件夹下图片已全部标记';
-            errorTitle = '播放结束';
-        } else if (imageUrls.length === 0) {
-            // No images loaded at all (no folder selected or empty folder)
-            errorMessage = '没有可供播放的图片。请先在图片库中选择一个文件夹。';
-            errorTitle = '图片缺失错误';
-        }
-
-        showCustomAlert(errorMessage, errorTitle);
-        stopGame(); // Stop the session if no images are available in the filtered pool
-        return;
-    }
-
-    // Only mark automatically if the timer triggered the advance (isTimerTriggered is true)
-    // AND it's not infinite mode AND it's not a brand new session start or initial load.
+    // Auto-marking logic for the *previous* image
     if (isTimerTriggered && currentImageIndex !== -1 && isPlaying && !isPaused && displayTime !== Infinity) {
         const finishedImagePath = imageFiles[currentImageIndex].path;
         const finishedDuration = displayTime;
         await window.electronAPI.saveImageMark(finishedImagePath, finishedDuration);
-        imageMarks = await window.electronAPI.getImageMarks(); // Reload marks
-        updatePlaybackImagePool(); // Crucial: Re-evaluate playback pool after marking
+        imageMarks = await window.electronAPI.getImageMarks(); // Reload marks after saving
     }
 
-    let newIndexRaw; // This will be the index in the original imageUrls array
+    if (currentSessionPlaybackQueue.length === 0) {
+        // This scenario should be caught by the disabled start button.
+        // If somehow reached, it means no images are eligible.
+        // Just stop the game (return to menu) if this happens during playback.
+        stopGame();
+        return;
+    }
+
+    let newIndexRaw = -1;
+    let foundNext = false;
 
     if (isStartingNewSession) {
-        displayedImageHistory = []; // Clear history
-        historyPointer = -1; // Reset pointer
-
-        if (isRandomPlayback) {
-            newIndexRaw = currentPlaybackImageIndexes[Math.floor(Math.random() * currentPlaybackImageIndexes.length)];
-        } else {
-            newIndexRaw = currentPlaybackImageIndexes[0]; // Always start from the first eligible image
+        // If starting a new session, find the first playable image in the *fixed* session queue.
+        for (let i = 0; i < currentSessionPlaybackQueue.length; i++) {
+            const potentialRawIndex = currentSessionPlaybackQueue[i];
+            const potentialPath = imageFiles[potentialRawIndex].path;
+            const isMarked = imageMarks[potentialPath] && imageMarks[potentialPath].length > 0;
+            if (!isFilterMarkedEnabled || !isMarked) {
+                newIndexRaw = potentialRawIndex;
+                foundNext = true;
+                break;
+            }
         }
-        displayedImageHistory.push(newIndexRaw);
-        historyPointer = 0;
-
-    } else { // Not starting a new session (timer tick or manual 'next' click)
-        if (!isRandomPlayback) {
-            // Find the current image's index within the *current* filtered playback pool
-            const currentPlaybackIndexInPool = currentPlaybackImageIndexes.indexOf(currentImageIndex);
-            
-            if (currentPlaybackIndexInPool === -1 || historyPointer >= displayedImageHistory.length -1) {
-                // Case 1: Current image is no longer in the playback pool (e.g., just marked it).
-                // Or Case 2: We are at the end of the history.
-                // Find the next image in the *current* sorted playback pool.
-                let nextPlaybackIndex = (currentPlaybackIndexInPool + 1) % currentPlaybackImageIndexes.length;
-                // If we are at the end of the filtered list, wrap around to the beginning for sequential
-                newIndexRaw = currentPlaybackImageIndexes[nextPlaybackIndex % currentPlaybackImageIndexes.length];
-                
-                // If current image was not in pool, or we're at end of history,
-                // clear future history and add the new image
-                if (historyPointer < displayedImageHistory.length -1) {
-                    displayedImageHistory = displayedImageHistory.slice(0, historyPointer + 1);
-                }
-                displayedImageHistory.push(newIndexRaw);
-                historyPointer = displayedImageHistory.length - 1;
-
-            } else {
-                // Normal sequential progression within history
-                historyPointer++;
-                newIndexRaw = displayedImageHistory[historyPointer];
+    } else {
+        // For manual 'next' or timer-triggered advance, look for the next image in the queue
+        // First, find where the current image is in the fixed session queue.
+        const currentImageRawIndex = currentImageIndex;
+        let currentImageQueueIndex = -1;
+        for(let i = 0; i < currentSessionPlaybackQueue.length; i++) {
+            if (currentSessionPlaybackQueue[i] === currentImageRawIndex) {
+                currentImageQueueIndex = i;
+                break;
             }
-        } else {
-            // Random playback: Pick a new random image from the filtered list
-            if (currentPlaybackImageIndexes.length === 1) {
-                newIndexRaw = currentPlaybackImageIndexes[0];
-            } else {
-                const previousRawIndex = currentImageIndex;
-                let tempNewIndexRaw;
-                do {
-                    tempNewIndexRaw = currentPlaybackImageIndexes[Math.floor(Math.random() * currentPlaybackImageIndexes.length)];
-                } while (tempNewIndexRaw === previousRawIndex && currentPlaybackImageIndexes.length > 1);
-                newIndexRaw = tempNewIndexRaw;
-            }
+        }
 
-            // Truncate history if navigating back then picking random
-            if (historyPointer < displayedImageHistory.length - 1) {
-                displayedImageHistory = displayedImageHistory.slice(0, historyPointer + 1);
+        // Search for the next playable image in the fixed queue, starting from the next position
+        // If currentImageQueueIndex is -1 (e.g., current image was somehow removed from the original queue),
+        // we should start search from the beginning.
+        let startIndexForNextSearch = currentImageQueueIndex !== -1 ? currentImageQueueIndex + 1 : 0;
+
+        for (let i = startIndexForNextSearch; i < currentSessionPlaybackQueue.length; i++) {
+            const potentialRawIndex = currentSessionPlaybackQueue[i];
+            const potentialPath = imageFiles[potentialRawIndex].path;
+            const isMarked = imageMarks[potentialPath] && imageMarks[potentialPath].length > 0;
+            if (!isFilterMarkedEnabled || !isMarked) {
+                newIndexRaw = potentialRawIndex;
+                foundNext = true;
+                break;
             }
-            displayedImageHistory.push(newIndexRaw);
-            historyPointer = displayedImageHistory.length - 1;
         }
     }
+
+    if (!foundNext) {
+        // No more eligible images found, display message and pause, do NOT show alert or return to menu.
+        clearInterval(countdownTimer); // Stop the countdown
+        isPlaying = false; // Set playing state to false
+        isPaused = true; // Set paused state to true
+        pausePlayButton.textContent = '▶'; // Change play/pause button to "Play" icon
+        countdownElement.textContent = '已经没有下一张'; // Display the "no next" message
+        updateNavigationButtons(); // Update navigation buttons (next button should be disabled)
+        updateMarkingUI(); // Ensure marking UI is correct for the last image
+        updateStartButtonState(); // Call this to update the main menu's start button state
+        console.log('Playback finished: No more eligible images.');
+        return; // Exit the function, stay on the current screen
+    }
+
+    // Update history for forward movement. Clear future history before adding new image.
+    if (historyPointer < displayedImageHistory.length - 1) {
+        displayedImageHistory = displayedImageHistory.slice(0, historyPointer + 1);
+    }
+    displayedImageHistory.push(newIndexRaw);
+    historyPointer = displayedImageHistory.length - 1;
 
     currentImageIndex = newIndexRaw;
     currentImage.src = imageUrls[currentImageIndex];
-    updateImageDisplay(); // <--- Call this here to handle effects and average background
-    remainingTime = displayTime; // remainingTime will be Infinity if displayTime is Infinity
+    updateImageDisplay();
+    remainingTime = displayTime;
     updateCountdownDisplay();
     updateNavigationButtons();
     updateMarkingUI();
 
-    if (isPaused) {
-        isPaused = false;
-        pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
+    // Only start countdown if not already paused
+    if (!isPaused) {
+        startCountdown();
     }
-    startCountdown();
 }
 
 /**
@@ -1938,15 +1971,15 @@ function showPreviousImage() {
     if (historyPointer > 0) {
         clearInterval(countdownTimer);
         historyPointer--;
-        currentImageIndex = displayedImageHistory[historyPointer];
+        currentImageIndex = displayedImageHistory[historyPointer]; // Use from history
         currentImage.src = imageUrls[currentImageIndex];
-        updateImageDisplay(); // <--- Call this here to handle effects and average background
+        updateImageDisplay();
         remainingTime = displayTime; // Reset time for a new image from history (can be Infinity)
         updateCountdownDisplay();
-        updateMarkingUI(); // New: Update marking UI after image changes
+        updateMarkingUI();
 
-        // Ensure playback state (resume if was paused, otherwise keep playing)
-        if (!isPaused) { // Only restart countdown if not explicitly paused
+        // If currently playing, restart countdown. If paused, do not.
+        if (!isPaused) {
             startCountdown();
         }
     } else {
@@ -1959,8 +1992,8 @@ function showPreviousImage() {
 preset30sButton.addEventListener('click', (event) => setPresetTime(30, event.target));
 preset60sButton.addEventListener('click', (event) => setPresetTime(60, event.target));
 preset120sButton.addEventListener('click', (event) => setPresetTime(120, event.target));
-preset300sButton.addEventListener('click', (event) => setPresetTime(300, event.target)); 
-preset600sButton.addEventListener('click', (event) => setPresetTime(600, event.target)); 
+preset300sButton.addEventListener('click', (event) => setPresetTime(300, event.target));
+preset600sButton.addEventListener('click', (event) => setPresetTime(600, event.target));
 presetInfiniteTime.addEventListener('click', (event) => setPresetTime(Infinity, event.target)); // Event for infinite button
 
 // Main menu start button now calls unified initiateSketchSession
@@ -1975,7 +2008,7 @@ selectFolderForSketchAndReturnToMenuButton.addEventListener('click', async () =>
 
 // Navigation button event listeners
 prevImageButton.addEventListener('click', showPreviousImage);
-// Modified nextImageButton to NOT trigger auto-marking
+// Modified nextImageButton to NOT trigger auto-marking directly (handled by advanceImage logic)
 nextImageButton.addEventListener('click', () => advanceImage(false, false)); // Manual next click, not timer triggered
 
 /**
@@ -1993,7 +2026,7 @@ function togglePausePlay() { // Renamed for clarity, logic is the same
         pausePlayButton.textContent = '▶'; // Switch to Play icon
         clearInterval(countdownTimer);
     }
-    updateNavigationButtons(); 
+    updateNavigationButtons();
 }
 pausePlayButton.addEventListener('click', togglePausePlay);
 
@@ -2004,9 +2037,9 @@ pausePlayButton.addEventListener('click', togglePausePlay);
  * 'remainingTime' is set to 'displayTime' only when a new image is loaded (in advanceImage).
  */
 function startCountdown() {
-    clearInterval(countdownTimer); 
+    clearInterval(countdownTimer);
     // If in infinite mode, or explicitly paused, do not start the interval
-    if (displayTime === Infinity || isPaused) { 
+    if (displayTime === Infinity || isPaused) {
         return;
     }
 
@@ -2018,19 +2051,18 @@ function startCountdown() {
         updateCountdownDisplay();
 
         if (remainingTime <= 0) {
-            clearInterval(countdownTimer); 
+            clearInterval(countdownTimer);
             // Automatically mark image as sketched ONLY when timer runs out AND it's not infinite mode
             if (currentImageIndex !== -1 && imageFiles[currentImageIndex] && displayTime !== Infinity) {
                 const finishedImagePath = imageFiles[currentImageIndex].path;
                 const finishedDuration = displayTime;
                 await window.electronAPI.saveImageMark(finishedImagePath, finishedDuration);
-                // After saving, reload marks and update playback pool (if filter is active)
+                // After saving, reload marks
                 imageMarks = await window.electronAPI.getImageMarks();
-                updatePlaybackImagePool(); // Crucial: Re-evaluate playback pool after marking
             }
             advanceImage(false, true); // Advance, and signal it's timer triggered for auto-marking
         }
-    }, 1000); 
+    }, 1000);
 }
 
 /**
@@ -2105,7 +2137,7 @@ function updateImageDisplay() {
             showCustomAlert(`无法加载图片：${imageFiles[currentImageIndex]?.name || '未知文件'}。已跳过。`, '图片加载错误');
             // Skip to next image automatically if there's a loading error
             // Use a short timeout to prevent rapid recursion if many images are broken
-            setTimeout(() => advanceImage(false, false), 500); 
+            setTimeout(() => advanceImage(false, false), 500);
         } else {
             // This is likely a non-critical error (e.g., src cleared on exit, or non-image URL)
             // console.warn(`Non-critical image loading issue or src cleared: ${currentImage.src}`); // For debugging non-critical cases
@@ -2117,31 +2149,47 @@ function updateImageDisplay() {
  * Updates the enabled/disabled state of navigation buttons.
  */
 function updateNavigationButtons() {
-    // Check if there's sufficient history to go back
+    // Prev button is disabled if at the beginning of history
     prevImageButton.disabled = (historyPointer <= 0);
-    
-    // Next button is disabled if no images are left in the filtered pool
-    // OR if we are at the end of the history AND there's only one image in the current filtered pool (to prevent infinite looping with 'next' on single item)
-    // OR if we are at the very last image in the filtered sequence (for sequential playback)
-    let disableNext = currentPlaybackImageIndexes.length === 0;
-    if (!isRandomPlayback && currentPlaybackImageIndexes.length > 0) {
-        // Find the index of the current image within the *sorted* currentPlaybackImageIndexes
-        const currentFilteredIndex = currentPlaybackImageIndexes.indexOf(currentImageIndex);
-        if (currentFilteredIndex !== -1 && currentFilteredIndex === currentPlaybackImageIndexes.length - 1) {
-            disableNext = true; // If it's the last image in sequence, disable next
+
+    // Determine if there's a next eligible image to advance to
+    let hasNextEligible = false;
+
+    // If we're not at the very end of the displayed history, then we can always go "forward" in history
+    if (historyPointer < displayedImageHistory.length - 1) {
+        hasNextEligible = true;
+    } else {
+        // We are at the end of `displayedImageHistory`. Check if there are any remaining
+        // eligible images in `currentSessionPlaybackQueue` that haven't been displayed yet.
+        const currentRawIndex = displayedImageHistory[historyPointer];
+        let currentImageQueueIndex = -1; // Find the current image's position in the fixed queue
+        for(let i = 0; i < currentSessionPlaybackQueue.length; i++) {
+            if (currentSessionPlaybackQueue[i] === currentRawIndex) {
+                currentImageQueueIndex = i;
+                break;
+            }
         }
-    } else if (currentPlaybackImageIndexes.length === 1 && currentPlaybackImageIndexes[0] === currentImageIndex) {
-         // If there's only one image left, and it's currently displayed, disable next
-         disableNext = true;
+
+        if (currentImageQueueIndex !== -1) {
+            // Search from the next position in the fixed queue for an eligible image
+            for (let i = currentImageQueueIndex + 1; i < currentSessionPlaybackQueue.length; i++) {
+                const potentialNextRawIndex = currentSessionPlaybackQueue[i];
+                const potentialNextPath = imageFiles[potentialNextRawIndex].path;
+                const isMarked = imageMarks[potentialNextPath] && imageMarks[potentialNextPath].length > 0;
+                if (!isFilterMarkedEnabled || !isMarked) {
+                    hasNextEligible = true;
+                    break;
+                }
+            }
+        }
     }
 
-
-    nextImageButton.disabled = disableNext;
-
-    // Pause/Play button should be disabled if no playable images at all.
-    // If in infinite mode, it should always be enabled to allow manual pause/play.
-    pausePlayButton.disabled = (currentPlaybackImageIndexes.length === 0 || (!isPlaying && displayTime !== Infinity));
+    nextImageButton.disabled = !hasNextEligible;
+    // The pause/play button should be disabled if there are no images in the queue at all,
+    // or if the session has technically finished (isPlaying is false but we're still on screen).
+    pausePlayButton.disabled = (currentSessionPlaybackQueue.length === 0 || (!isPlaying && countdownElement.textContent === '已经没有下一张'));
 }
+
 
 /**
  * Draws the grid on the canvas.
@@ -2149,27 +2197,27 @@ function updateNavigationButtons() {
  */
 function drawGrid() {
     const imageRect = currentImage.getBoundingClientRect();
-    
+
     gridCanvas.width = imageRect.width;
     gridCanvas.height = imageRect.height;
 
-    ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); 
+    ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
 
-    if (!isGridEnabled) return; 
+    if (!isGridEnabled) return;
 
     ctx.lineWidth = 1;
 
     // Use themed grid color
     ctx.strokeStyle = hexToRgba(currentGridColorHex, gridAlpha);
 
-    for (let x = 0; x < gridCanvas.width; x += currentGridSize) { 
+    for (let x = 0; x < gridCanvas.width; x += currentGridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, gridCanvas.height);
         ctx.stroke();
     }
 
-    for (let y = 0; y < gridCanvas.height; y += currentGridSize) { 
+    for (let y = 0; y < gridCanvas.height; y += currentGridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(gridCanvas.width, y); // Fix: line should go full width
@@ -2181,18 +2229,18 @@ function drawGrid() {
  * Stops the current sketch session and returns to the main menu.
  */
 function stopGame() {
-    clearInterval(countdownTimer); 
+    clearInterval(countdownTimer);
     isPlaying = false;
     isPaused = false; // Reset pause state when returning to menu
     pausePlayButton.textContent = '⏸'; // Reset button icon to Pause
 
     // Crucial: Clear the image source and remove event listeners FIRST
-    currentImage.src = ''; 
+    currentImage.src = '';
     currentImage.onload = null; // Remove onload to prevent it firing when src is cleared
     currentImage.onerror = null; // Remove onerror to prevent false alarms
 
-    imageDisplayArea.classList.add('hidden'); 
-    controlsMenu.classList.remove('hidden'); 
+    imageDisplayArea.classList.add('hidden');
+    controlsMenu.classList.remove('hidden');
     folderBrowserView.classList.add('hidden'); // Ensure image library view is also hidden
     topRightMenuButtons.classList.remove('hidden'); // Show top-right menu buttons when returning to main menu
     console.log('Sketch session stopped.');
@@ -2203,10 +2251,10 @@ function stopGame() {
     dynamicBackgroundLayer.classList.remove('grayscale-active-bg'); // Ensure grayscale is off for this layer
     updateMainMenuBackground(); // Restore main menu background to body
 
-    updateNavigationButtons(); 
+    updateNavigationButtons();
     updateMarkingUI(); // Reset marking UI when returning to menu
-    updatePlaybackImagePool(); // Re-evaluate button tooltips on main menu
     updateMainMenuHintText(); // Update hint text when returning to main menu
+    updateStartButtonState(); // <-- Call the new function here as well, important when manually stopping.
 
     // Show traffic lights when returning to main menu
     if (window.electronAPI) {
@@ -2245,8 +2293,9 @@ goUpFolderButton.addEventListener('click', () => {
 // NEW: Close folder browser button (now correctly retains the mainMenuSelectedFolderPath)
 closeFolderBrowserButton.addEventListener('click', () => {
     // Simply return to the main menu. The showMainMenu function will now correctly
-    // restore the state based on mainMenuSelectedFolderPath.
-    showMainMenu(); 
+    // restore the state based on mainMenuSelectedFolderPath, without being
+    // overwritten by defaultPath logic if startupMode is 'defaultPath' and a path is already selected.
+    showMainMenu();
 });
 
 
