@@ -8,7 +8,7 @@ const sketchFolderInputDisplay = document.getElementById('sketchFolderInputDispl
 const displayTimeInput = document.getElementById('displayTime');
 const startButton = document.getElementById('startButton');
 const mirrorToggle = document.getElementById('mirrorToggle');
-const grayscaleToggle = document.getElementById('grayscaleToggle');
+const grayscaleToggle = document = document.getElementById('grayscaleToggle');
 const gridToggle = document.getElementById('gridToggle');
 const mainMenuHintText = document.getElementById('mainMenuHintText'); // New: Main menu hint text element
 
@@ -1843,7 +1843,10 @@ function updateMainMenuHintText() {
         hintText = '该文件夹下图片已全部标记。请调整过滤设置或选择其他文件夹。';
     } else if (imageUrls.length === 0) {
         hintText = '当前文件夹中没有可速写的图片。';
-    } else if (isNaN(displayTime) || displayTime <= 0) { // New condition for invalid time
+    } else if (displayTime === Infinity) { // Handle infinite time specifically
+        hintText = `当前一共选择了${numEligibleImages}张图片，时间设置为无限制。`;
+    }
+    else if (isNaN(displayTime) || displayTime <= 0) { // New condition for invalid time
         hintText = `当前一共选择了${numEligibleImages}张图片。请选择一个速写时间。`;
     } else {
         const estimatedTotalTimeSeconds = numEligibleImages * displayTime;
@@ -1863,7 +1866,7 @@ function updateMainMenuHintText() {
 /**
  * Displays the next image in sequence or a random one, based on the playback mode.
  * This function handles both automatic advancement (from timer) and manual 'next' clicks.
- * It now iterates through the `currentSessionPlaybackQueue`, skipping marked images if filter is enabled.
+ * It now iterates through the `currentSessionPlaybackQueue` (which is already filtered at session start).
  * @param {boolean} isStartingNewSession - True if this call initiates a new sketch session.
  * @param {boolean} isTimerTriggered - True if called by the timer (for auto-marking).
  */
@@ -1879,7 +1882,6 @@ async function advanceImage(isStartingNewSession = false, isTimerTriggered = fal
     if (currentSessionPlaybackQueue.length === 0) {
         // This scenario should be caught by the disabled start button.
         // If somehow reached, it means no images are eligible.
-        // Just stop the game (return to menu) if this happens during playback.
         stopGame();
         return;
     }
@@ -1888,58 +1890,44 @@ async function advanceImage(isStartingNewSession = false, isTimerTriggered = fal
     let foundNext = false;
 
     if (isStartingNewSession) {
-        // If starting a new session, find the first playable image in the *fixed* session queue.
-        for (let i = 0; i < currentSessionPlaybackQueue.length; i++) {
-            const potentialRawIndex = currentSessionPlaybackQueue[i];
-            const potentialPath = imageFiles[potentialRawIndex].path;
-            const isMarked = imageMarks[potentialPath] && imageMarks[potentialPath].length > 0;
-            if (!isFilterMarkedEnabled || !isMarked) {
-                newIndexRaw = potentialRawIndex;
-                foundNext = true;
-                break;
-            }
-        }
+        // For a new session, the first image is always the first in the predetermined queue.
+        newIndexRaw = currentSessionPlaybackQueue[0];
+        foundNext = (currentSessionPlaybackQueue.length > 0);
     } else {
-        // For manual 'next' or timer-triggered advance, look for the next image in the queue
-        // First, find where the current image is in the fixed session queue.
-        const currentImageRawIndex = currentImageIndex;
+        // For manual 'next' or timer-triggered advance, simply go to the next position in the queue.
+        // The currentImageIndex is a raw index. We need its position in currentSessionPlaybackQueue.
+        const currentImageRawIndex = currentImageIndex; // This is the raw index of the currently displayed image.
         let currentImageQueueIndex = -1;
-        for(let i = 0; i < currentSessionPlaybackQueue.length; i++) {
+
+        // Find the index of the current raw image in the currentSessionPlaybackQueue
+        for (let i = 0; i < currentSessionPlaybackQueue.length; i++) {
             if (currentSessionPlaybackQueue[i] === currentImageRawIndex) {
                 currentImageQueueIndex = i;
                 break;
             }
         }
 
-        // Search for the next playable image in the fixed queue, starting from the next position
-        // If currentImageQueueIndex is -1 (e.g., current image was somehow removed from the original queue),
-        // we should start search from the beginning.
-        let startIndexForNextSearch = currentImageQueueIndex !== -1 ? currentImageQueueIndex + 1 : 0;
-
-        for (let i = startIndexForNextSearch; i < currentSessionPlaybackQueue.length; i++) {
-            const potentialRawIndex = currentSessionPlaybackQueue[i];
-            const potentialPath = imageFiles[potentialRawIndex].path;
-            const isMarked = imageMarks[potentialPath] && imageMarks[potentialPath].length > 0;
-            if (!isFilterMarkedEnabled || !isMarked) {
-                newIndexRaw = potentialRawIndex;
-                foundNext = true;
-                break;
-            }
+        if (currentImageQueueIndex !== -1 && currentImageQueueIndex + 1 < currentSessionPlaybackQueue.length) {
+            // There is a next image in the session queue.
+            newIndexRaw = currentSessionPlaybackQueue[currentImageQueueIndex + 1];
+            foundNext = true;
+        } else {
+            // No next image in the session queue.
+            foundNext = false;
         }
     }
 
     if (!foundNext) {
-        // No more eligible images found, display message and pause, do NOT show alert or return to menu.
-        clearInterval(countdownTimer); // Stop the countdown
-        isPlaying = false; // Set playing state to false
-        isPaused = true; // Set paused state to true
-        pausePlayButton.textContent = '▶'; // Change play/pause button to "Play" icon
-        countdownElement.textContent = '已经没有下一张'; // Display the "no next" message
-        updateNavigationButtons(); // Update navigation buttons (next button should be disabled)
-        updateMarkingUI(); // Ensure marking UI is correct for the last image
-        updateStartButtonState(); // Call this to update the main menu's start button state
+        clearInterval(countdownTimer);
+        isPlaying = false;
+        isPaused = true;
+        pausePlayButton.textContent = '▶';
+        countdownElement.textContent = '已经没有下一张';
+        updateNavigationButtons();
+        updateMarkingUI();
+        updateStartButtonState();
         console.log('Playback finished: No more eligible images.');
-        return; // Exit the function, stay on the current screen
+        return;
     }
 
     // Update history for forward movement. Clear future history before adding new image.
@@ -2170,17 +2158,12 @@ function updateNavigationButtons() {
             }
         }
 
-        if (currentImageQueueIndex !== -1) {
-            // Search from the next position in the fixed queue for an eligible image
-            for (let i = currentImageQueueIndex + 1; i < currentSessionPlaybackQueue.length; i++) {
-                const potentialNextRawIndex = currentSessionPlaybackQueue[i];
-                const potentialNextPath = imageFiles[potentialNextRawIndex].path;
-                const isMarked = imageMarks[potentialNextPath] && imageMarks[potentialNextPath].length > 0;
-                if (!isFilterMarkedEnabled || !isMarked) {
-                    hasNextEligible = true;
-                    break;
-                }
-            }
+        if (currentImageQueueIndex !== -1 && currentImageQueueIndex + 1 < currentSessionPlaybackQueue.length) {
+            // There is a next image in the session queue.
+            hasNextEligible = true;
+        } else {
+            // No next image in the session queue.
+            hasNextEligible = false;
         }
     }
 
